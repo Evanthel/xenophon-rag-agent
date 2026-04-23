@@ -3,30 +3,30 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Your personal LLM assistant</title>
+    <title>Xenophon</title>
     <meta
       name="description"
-      content="A minimal LLM chatbot as a single HTML file on GitHub Pages. Fork it and shape it into anything by editing the system prompt."
+      content="Xenophon is a reflective LLM chatbot for distilling dilemmas, concluding conundrums, and relieving reflection."
     />
     <script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
     <style>
       :root {
-        color-scheme: dark;
-        --bg: #0b1120;
-        --surface: #111827;
-        --surface-2: #1f2937;
-        --fg: #f8fafc;
-        --muted: #94a3b8;
-        --border: #1f2937;
-        --border-strong: #334155;
-        --accent: #60a5fa;
-        --accent-strong: #3b82f6;
-        --bubble-user: #1e3a8a;
-        --bubble-user-fg: #dbeafe;
-        --bubble-assistant: #111827;
-        --error-bg: #450a0a;
-        --error-fg: #fecaca;
+        color-scheme: light;
+        --bg: #f8f4e9;
+        --surface: #fffdf7;
+        --surface-2: #efe7d2;
+        --fg: #292313;
+        --muted: #756b55;
+        --border: #e2d5b8;
+        --border-strong: #c7ad72;
+        --accent: #9f7a22;
+        --accent-strong: #b5892f;
+        --bubble-user: #efe2bd;
+        --bubble-user-fg: #292313;
+        --bubble-assistant: #fffdf7;
+        --error-bg: #f5d9d1;
+        --error-fg: #7f1d1d;
       }
       * { box-sizing: border-box; }
       html, body { height: 100%; }
@@ -133,12 +133,12 @@
       }
       .msg-meta.user { align-self: flex-end; text-align: right; }
       .msg-meta .cost { color: var(--accent); }
-      /* When OpenAI's automatic prompt cache hits (prompts ≥ 1024 tokens),
+      /* When provider prompt caching hits (prompts ≥ 1024 tokens),
          highlight it so students notice the moment it kicks in. */
       .msg-meta .cached {
         background: rgba(34, 197, 94, .18);
         border: 1px solid rgba(34, 197, 94, .45);
-        color: #86efac;
+        color: #2f6f42;
         padding: 0 .35rem;
         border-radius: 4px;
         font-weight: 500;
@@ -341,8 +341,7 @@
         color: var(--fg);
         margin: 0;
       }
-      /* Small inline note under sampling sliders when the current model
-         locks them to defaults (e.g. gpt-5 reasoning-tuned variants). */
+      /* Small inline note under sampling sliders when the current model locks them. */
       .locked-note {
         display: none;
         font-size: .72rem;
@@ -749,44 +748,25 @@
       <div class="drawer-body">
         <div class="field">
           <div class="field-header">
-            <label for="key">OpenAI API key<button type="button" class="help-tip" data-help="Stored in your browser session only. Sent directly to api.openai.com, nowhere else." aria-label="About the API key">?</button></label>
-            <a class="get-key" href="https://platform.openai.com/account/api-keys"
+            <label for="key">OpenRouter API key<button type="button" class="help-tip" data-help="Stored in your browser session only. Sent directly to openrouter.ai, nowhere else." aria-label="About the API key">?</button></label>
+            <a class="get-key" href="https://openrouter.ai/keys"
               target="_blank" rel="noopener">Get a key</a>
           </div>
-          <input id="key" type="password" placeholder="sk-..." autocomplete="off" />
+          <input id="key" type="password" placeholder="sk-or-..." autocomplete="off" />
         </div>
 
         <div class="field">
           <div class="field-header">
-            <label for="model">Model<button type="button" class="help-tip" data-help="Newest first. Small, fast variants only (nano / mini / turbo) — free-tier friendly. If your key rejects a newer model, step down a generation." aria-label="About model choice">?</button></label>
+            <label for="model">Model<button type="button" class="help-tip" data-help="OpenRouter model IDs. Gemini 2.5 Flash is the fast default; Gemini 2.5 Pro is the stable flagship option." aria-label="About model choice">?</button></label>
           </div>
           <select id="model">
-            <option value="gpt-5-nano">gpt-5-nano · 2026 · $0.05 in / $0.40 out · locked sampling</option>
-            <option value="gpt-4.1-nano">gpt-4.1-nano · 2025 · $0.10 in / $0.40 out</option>
-            <option value="gpt-4o-mini">gpt-4o-mini · 2024 · $0.15 in / $0.60 out</option>
-            <option value="gpt-3.5-turbo">gpt-3.5-turbo · 2023 · $0.50 in / $1.50 out</option>
+            <option value="google/gemini-2.5-flash">Gemini 2.5 Flash · fast reasoning · $0.30 in / $2.50 out</option>
+            <option value="google/gemini-2.5-pro">Gemini 2.5 Pro · stable flagship · $1.25 in / $10.00 out</option>
           </select>
-        </div>
-
-        <div class="field">
-          <div class="field-header">
-            <label for="system">System prompt<button type="button" class="help-tip" data-help="The invisible first message that steers every reply. Change this and the bot becomes a different bot." aria-label="About the system prompt">?</button></label>
-            <button type="button" class="mini-btn" id="reset-system">Reset</button>
-          </div>
-          <select id="preset" class="preset-select" aria-label="Preset prompts">
-            <option value="">Load a preset…</option>
-            <option value="personal-assistant">Personal assistant</option>
-            <option value="dad-jokes">Dad jokes</option>
-            <option value="chatgpt">ChatGPT-style</option>
-            <option value="claude">Claude-style</option>
-            <option value="grok">Grok-style</option>
-          </select>
-          <p class="field-note">Branded presets are caricatures of each product's public vibe, not their real system prompts (which aren't public).</p>
-          <textarea id="system" spellcheck="false"></textarea>
         </div>
 
         <div class="section-heading">
-          Sampling
+          Philosophy Frames
           <button type="button" class="help-tip wide" data-help="Temperature and top-p both control how random the reply is, but in different ways. Best practice: change one at a time so you can tell which knob caused a shift.
 
 Preset use cases (temperature · top-p):
@@ -831,10 +811,10 @@ Preset use cases (temperature · top-p):
         <div class="field checkbox-field">
           <input type="checkbox" id="show-logprobs" />
           <label for="show-logprobs">Show token probabilities</label>
-          <button type="button" class="help-tip" data-help="Render each reply token as a coloured chip based on how confident the model was (green = certain, red = uncertain). Click a chip to see the top-5 alternatives. Not supported by reasoning models like gpt-5-nano." aria-label="About token probabilities">?</button>
+          <button type="button" class="help-tip" data-help="Render each reply token as a coloured chip based on how confident the model was (green = certain, red = uncertain). Click a chip to see the top-5 alternatives. Availability depends on the selected OpenRouter provider." aria-label="About token probabilities">?</button>
         </div>
         <div class="locked-note" id="logprobs-locked-note">
-          Token probabilities aren't returned by reasoning models (gpt-5 family). The reply will render as normal markdown until you switch to an older model.
+          Token probabilities are unavailable for this model/provider. The reply will render as normal markdown.
         </div>
 
         <div class="field">
@@ -847,7 +827,7 @@ Preset use cases (temperature · top-p):
       </div>
       <div class="drawer-resize" id="drawer-resize" aria-label="Resize sidebar" role="separator" aria-orientation="vertical"></div>
       <div class="drawer-footer">
-        <button type="button" id="download-simple" disabled title="Transcript only — role, content, model, system prompt">Simple JSON</button>
+        <button type="button" id="download-simple" disabled title="Transcript only — role, content, model, and embedded Xenophon prompt">Simple JSON</button>
         <button type="button" id="download-detailed" disabled title="Everything — per-turn usage, finish reasons, latency, logprobs">Detailed JSON</button>
         <button type="button" id="clear" disabled>Clear chat</button>
         <button type="button" id="reset-all" class="danger">Reset all</button>
@@ -871,8 +851,8 @@ Preset use cases (temperature · top-p):
     <div class="app">
       <main id="chat" class="chat">
         <div class="hero" id="placeholder">
-          <h1 class="hero-title">Personal Assistant</h1>
-          <p class="hero-tagline">A chatbot you can shape into anything.</p>
+          <h1 class="hero-title">Xenophon</h1>
+          <p class="hero-tagline">Dilemma distiller, conundrum concluder, reflection reliever</p>
         </div>
       </main>
 
@@ -884,7 +864,7 @@ Preset use cases (temperature · top-p):
           autocomplete="off"
           required
         />
-        <button id="send" type="submit">Send</button>
+        <button id="send" type="submit">Inquire</button>
       </form>
 
       <footer>
@@ -896,72 +876,176 @@ Preset use cases (temperature · top-p):
     </div>
 
     <script>
-      const DEFAULT_SYSTEM =
-        "You are a helpful personal assistant. Be concise, clear, and friendly. " +
-        "Ask a brief clarifying question when the request is ambiguous.";
+      const XENOPHON_PROMPT = `# AI Instructions
+When analyzing a user problem, first identify the main category:
+- PROBLEM SOLVING
+- DECISION MAKING
+- SYSTEMS THINKING
+- COMMUNICATION
 
-      // Caricatures of each product's public vibe, not their real system prompts
-      // (which aren't published). 'personal-assistant' == DEFAULT_SYSTEM so the
-      // Reset button and this preset agree.
-      const PRESETS = {
-        "personal-assistant": {
-          label: "Personal assistant",
-          prompt: DEFAULT_SYSTEM,
-        },
-        "dad-jokes": {
-          label: "Dad jokes",
-          prompt:
-            "You are a dad with dry British humour. Every reply is a relevant dad joke " +
-            "about what the user just said. Short, groan-worthy, deadpan. Emojis allowed — " +
-            "use them sparingly as punchlines, like a raised eyebrow, not confetti. " +
-            "Family friendly. British English.",
-        },
-        "chatgpt": {
-          label: "ChatGPT-style",
-          prompt:
-            "You are ChatGPT, a large language model trained by OpenAI. Answer helpfully " +
-            "and concisely. Use markdown formatting (headings, bullet lists, code fences) " +
-            "when it improves clarity. If asked about your knowledge cutoff, say it is " +
-            "early 2024 unless you know otherwise. Hedge politely on sensitive or " +
-            "uncertain topics, and decline requests that violate OpenAI's usage policies.",
-        },
-        "claude": {
-          label: "Claude-style",
-          prompt:
-            "You are Claude, an AI assistant made by Anthropic. You are helpful, harmless, " +
-            "and honest. Be thoughtful and substantive — don't rush to a shallow answer " +
-            "when the question deserves reflection. Prefer clear prose over bullet lists " +
-            "unless structure genuinely helps. Be willing to respectfully push back when " +
-            "you disagree. Acknowledge uncertainty rather than inventing facts.",
-        },
-        "grok": {
-          label: "Grok-style",
-          prompt:
-            "You are Grok, an AI inspired by the Hitchhiker's Guide to the Galaxy. You " +
-            "have a rebellious streak and a dry sense of humour. Answer directly, skip " +
-            "the corporate hedging, and don't be afraid of unconventional or edgy takes. " +
-            "Be accurate first, witty second — wit without substance is just noise.",
-        },
-      };
+Then choose the most suitable model based on the user's actual need, not only the surface description.
+
+Use a Socratic method approach first: ask short, focused follow-up questions until the real problem is clear.
+Do not assume too quickly. Clarify:
+- What exactly is happening?
+- What is the user trying to achieve?
+- What is blocking them?
+- Is this mainly a problem to solve, a decision to make, a system to understand, or a communication issue?
+- Is the issue about symptoms or root causes?
+
+Only after enough context is gathered, select the model. Diagnosis comes before advice.
+
+Quick guidance:
+- Need to avoid bad outcomes → Inversion
+- Need to break a problem into smaller parts → Issue trees
+- Need an original or innovative solution → First principles
+- Need to check if solving the right problem → Abstraction laddering
+- Need a structured creative solution → Productive Thinking Model
+- Need to compare options → Decision matrix
+- Need to evaluate long-term consequences → Second-order thinking
+- Need to avoid assumptions or jumping to conclusions → Ladder of inference
+- Need to assess the situation before responding → Cynefin framework
+- Need to prioritize tasks → Eisenhower Matrix
+- Need to understand relationships inside a system → Connection circles
+- Need to find root causes → Iceberg Model
+
+Prefer the simplest model that solves the problem clearly. If multiple models apply, start with diagnosis first (understanding the problem), then move to decision-making. Do not list multiple models unless necessary; choose one primary model first
+
+Fallback rules when multiple models fit:
+- If the issue is unclear → start with Iceberg Model or Issue trees
+- If the issue is emotional or interpersonal → check Communication models first
+- If action priority is needed → prefer Eisenhower Matrix or Impact-Effort Matrix
+- If trade-offs or consequences must be evaluated → prefer Decision Matrix or Second-order Thinking
+
+Output structure:
+- First summarize the problem in one sentence
+- State which model is being used and why
+- Walk through the model step by step
+- End with a practical recommendation or clear next action
+
+Constraint check before advice:
+- Check time constraints (urgent vs long-term)
+- Check resource constraints (money, energy, skills, team)
+- Check emotional constraints (stress, burnout, fear, conflict)
+- Check external constraints (rules, deadlines, dependencies)
+
+The best theoretical solution is not always the best practical solution. Recommendations must fit real constraints.
+
+# Six Thinking Hats
+When to use: DECISION MAKING
+Short description: Look at a decision from different perspectives
+
+# Ishikawa Diagram
+When to use: PROBLEM SOLVING
+Short description: Identify root causes of problems.
+
+# Eisenhower Matrix
+When to use: DECISION MAKING
+Short description: Prioritize your actions and tasks by importance and urgency
+
+# Second-order thinking
+When to use: DECISION MAKING
+Short description: Consider the long-term consequences of your decisions.
+
+# Iceberg Model
+When to use: SYSTEMS THINKING
+Short description: Uncover root causes of events by looking at hidden levels of abstractions.
+
+# Abstraction laddering
+When to use: PROBLEM SOLVING
+Short description: Frame your problem better with different levels of abstraction.
+
+# Decision matrix
+When to use: DECISION MAKING
+Short description: Choose the best option by considering multiple factors.
+
+# Impact-Effort Matrix
+When to use: DECISION MAKING
+Short description: Prioritize by weighing impact against the effort required.
+
+# Connection circles
+When to use: SYSTEMS THINKING
+Short description: Understand relationships and identify feedback loops within systems.
+
+# Ladder of inference
+When to use: DECISION MAKING
+Short description: Avoid jumping to conclusions. Make decisions based on reality.
+
+# Conflict Resolution Diagram
+When to use: PROBLEM SOLVING
+Short description: Find win-win solutions to conflicts
+
+# Situation-Behavior-Impact
+When to use: COMMUNICATION
+Short description: Give clearer feedback to others without judgement.
+
+# Hard choice model
+When to use: DECISION MAKING
+Short description: Figure out what kind of a decision you're making.
+
+# Zwicky box
+When to use: PROBLEM SOLVING
+Short description: Generate unique solutions to complex problems
+
+# OODA loop
+When to use: DECISION MAKING
+Short description: Make faster decisions with incomplete data.
+
+# Minto Pyramid
+When to use: COMMUNICATION
+Short description: Make your communication more efficient and clear.
+
+# Concept map
+When to use: SYSTEMS THINKING
+Short description: Understand relationships between entities in a concept or system.
+
+# Cynefin framework
+When to use: DECISION MAKING
+Short description: Make sense of different situations to choose an appropriate response.
+
+# Productive Thinking Model
+When to use: PROBLEM SOLVING
+Short description: Solve problems creatively and efficiently.
+
+# Inversion
+When to use: PROBLEM SOLVING
+Short description: Approach a problem from a different point of view.
+
+# Issue trees
+When to use: PROBLEM SOLVING
+Short description: Structure and solve problems in a systematic way.
+
+# Confidence determines speed vs. quality
+When to use: DECISION MAKING
+Short description: Determine a trade-off between speed and quality when building products.
+
+# First principles
+When to use: PROBLEM SOLVING
+Short description: Break down complex problems into basic elements and create innovative solutions from there.
+
+# Balancing feedback loop
+When to use: SYSTEMS THINKING
+Short description: Mechanism that pushes back against a change to create stability.
+
+# Reinforcing feedback loop
+When to use: SYSTEMS THINKING
+Short description: Understand the force behind exponential changes.`;
       const DEFAULTS = {
-        model: "gpt-4o-mini",
+        model: "google/gemini-2.5-flash",
         temperature: 0.8,
         top_p: 1.0,
         max_tokens: 1024,
       };
-      // Rough April-2026 USD per 1M tokens. Values are ballpark for teaching —
-      // check platform.openai.com/pricing for current rates before relying on them.
+      // Rough April-2026 OpenRouter USD per 1M tokens. Check
+      // openrouter.ai/models for current rates before relying on them.
       const PRICING = {
-        "gpt-5-nano":     { in: 0.05, out: 0.40 },
-        "gpt-4.1-nano":   { in: 0.10, out: 0.40 },
-        "gpt-4o-mini":    { in: 0.15, out: 0.60 },
-        "gpt-3.5-turbo":  { in: 0.50, out: 1.50 },
+        "google/gemini-2.5-flash": { in: 0.30, out: 2.50 },
+        "google/gemini-2.5-pro":   { in: 1.25, out: 10.00 },
       };
-      // gpt-5 reasoning-tuned variants only accept the default sampling params.
-      const SAMPLING_LOCKED = (model) => /^gpt-5(\b|[-.])/i.test(model);
+      const SAMPLING_LOCKED = () => false;
       // Sampling presets. The middle four are from Alammar & Grootendorst
       // (2024). 'Reproducible' (temp 0, top-p 1) pairs with a fixed seed in
-      // callOpenAI to produce the same reply across every student, useful
+      // callOpenRouter to produce the same reply across every student, useful
       // for classroom alignment demos. 'Chaos' is the opposite — both knobs
       // pushed to extremes, which reliably produces multilingual gibberish
       // and lands the 'don't tune both to the wall' lesson in one reply.
@@ -1008,8 +1092,7 @@ Preset use cases (temperature · top-p):
       // entry without showing up in JSON.stringify (for regenerate).
       const WRAP = Symbol("wrap");
       const KEYS = {
-        apiKey: "lmt-chatbot-openai-key",
-        system: "lmt-chatbot-system-prompt",
+        apiKey: "lmt-chatbot-openrouter-key",
         model: "lmt-chatbot-model",
         temperature: "lmt-chatbot-temperature",
         top_p: "lmt-chatbot-top-p",
@@ -1025,15 +1108,12 @@ Preset use cases (temperature · top-p):
 
       const keyInput = document.getElementById("key");
       const modelSelect = document.getElementById("model");
-      const systemInput = document.getElementById("system");
       const tempInput = document.getElementById("temp");
       const toppInput = document.getElementById("topp");
       const maxtokInput = document.getElementById("maxtok");
       const tempValue = document.getElementById("temp-value");
       const toppValue = document.getElementById("topp-value");
       const maxtokValue = document.getElementById("maxtok-value");
-      const resetSystemBtn = document.getElementById("reset-system");
-      const presetSelect = document.getElementById("preset");
       const samplingPresetSelect = document.getElementById("sampling-preset");
       const showLogprobsInput = document.getElementById("show-logprobs");
       const resizeHandle = document.getElementById("drawer-resize");
@@ -1066,8 +1146,8 @@ Preset use cases (temperature · top-p):
 
       // Hydrate controls from sessionStorage.
       keyInput.value = sessionStorage.getItem(KEYS.apiKey) || "";
-      systemInput.value = sessionStorage.getItem(KEYS.system) || DEFAULT_SYSTEM;
       modelSelect.value = sessionStorage.getItem(KEYS.model) || DEFAULTS.model;
+      if (!modelSelect.value) modelSelect.value = DEFAULTS.model;
       tempInput.value = sessionStorage.getItem(KEYS.temperature) ?? DEFAULTS.temperature;
       toppInput.value = sessionStorage.getItem(KEYS.top_p) ?? DEFAULTS.top_p;
       maxtokInput.value = sessionStorage.getItem(KEYS.max_tokens) ?? DEFAULTS.max_tokens;
@@ -1076,10 +1156,6 @@ Preset use cases (temperature · top-p):
 
       // Persist on input.
       keyInput.addEventListener("input", () => setOrClear(KEYS.apiKey, keyInput.value));
-      systemInput.addEventListener("input", () => {
-        setOrClear(KEYS.system, systemInput.value);
-        syncPresetIndicator();
-      });
       modelSelect.addEventListener("change", () => setOrClear(KEYS.model, modelSelect.value));
       tempInput.addEventListener("input", () => {
         sessionStorage.setItem(KEYS.temperature, tempInput.value);
@@ -1135,34 +1211,6 @@ Preset use cases (temperature · top-p):
         document.body.dataset.logprobsOn = showLogprobsInput.checked ? "true" : "false";
       }
       applyLogprobsState();
-
-      resetSystemBtn.addEventListener("click", () => {
-        systemInput.value = DEFAULT_SYSTEM;
-        sessionStorage.setItem(KEYS.system, DEFAULT_SYSTEM);
-        syncPresetIndicator();
-      });
-
-      // Apply a preset when the user picks one. Editing the textarea afterwards
-      // clears the indicator back to "Preset…" via syncPresetIndicator().
-      presetSelect.addEventListener("change", () => {
-        const key = presetSelect.value;
-        if (!key) return;
-        const preset = PRESETS[key];
-        if (!preset) return;
-        systemInput.value = preset.prompt;
-        sessionStorage.setItem(KEYS.system, preset.prompt);
-      });
-
-      function findPresetKey(prompt) {
-        for (const [k, v] of Object.entries(PRESETS)) {
-          if (v.prompt === prompt) return k;
-        }
-        return "";
-      }
-      function syncPresetIndicator() {
-        presetSelect.value = findPresetKey(systemInput.value);
-      }
-      syncPresetIndicator();
 
       // Lock sampling-slider UI when a sampling-locked model is selected.
       function applySamplingLock() {
@@ -1242,7 +1290,7 @@ Preset use cases (temperature · top-p):
         const text = input.value.trim();
         if (!text) return;
         if (!keyInput.value) {
-          addMessage("error", "Paste an OpenAI API key in Settings first.");
+          addMessage("error", "Paste an OpenRouter API key in Settings first.");
           setMenu(true);
           return;
         }
@@ -1253,7 +1301,7 @@ Preset use cases (temperature · top-p):
         const isFirstTurn = prevPromptTokens === 0;
         history.push({
           role: "user",
-          content: text,
+          content: isFirstTurn ? buildFirstUserMessage(text) : text,
           timestamp: new Date().toISOString(),
         });
         input.value = "";
@@ -1291,10 +1339,9 @@ Preset use cases (temperature · top-p):
             if (wasAtBottom) chatEl.scrollTop = chatEl.scrollHeight;
           };
           const { reply, usage, finish_reason, model_snapshot, id, logprobs } =
-            await callOpenAI({
+            await callOpenRouter({
               apiKey: keyInput.value,
               model,
-              systemPrompt: systemInput.value,
               messages: history,
               temperature: parseFloat(tempInput.value),
               top_p: parseFloat(toppInput.value),
@@ -1340,8 +1387,8 @@ Preset use cases (temperature · top-p):
 
             if (newUserMessage && userBubble) {
               // Back-compute this user turn's tokens from the prompt_tokens
-              // delta. First turn: the whole prompt_tokens is system + user,
-              // so we flag it as including the system prompt. Later turns:
+              // delta. First turn includes the embedded Xenophon prompt.
+              // Later turns:
               // delta minus the prior assistant reply isolates this single
               // user message.
               const userTurnTokens = isFirstTurn
@@ -1390,9 +1437,9 @@ Preset use cases (temperature · top-p):
       }
 
       // Two flavours of JSON export.
-      //   simple:   a human-readable transcript — model, system prompt, and
-      //             each turn as just { role, content }. Looks like a regular
-      //             OpenAI chat-completion messages payload.
+      //   simple:   a human-readable transcript — model and each turn as just
+      //             { role, content }. The first user turn includes the
+      //             embedded Xenophon prompt sent to OpenRouter.
       //   detailed: everything the app has captured — per-turn usage (incl.
       //             cached_tokens, reasoning_tokens), finish_reason, served
       //             model snapshot, latency, response id, full logprobs.
@@ -1400,7 +1447,6 @@ Preset use cases (temperature · top-p):
         const basePayload = {
           exported_at: new Date().toISOString(),
           model: modelSelect.value,
-          system_prompt: systemInput.value,
         };
         let payload;
         if (detailed) {
@@ -1453,24 +1499,22 @@ Preset use cases (temperature · top-p):
       function renderHero() {
         chatEl.innerHTML = `
           <div class="hero" id="placeholder">
-            <h1 class="hero-title">Personal Assistant</h1>
-            <p class="hero-tagline">A chatbot you can shape into anything.</p>
+            <h1 class="hero-title">Xenophon</h1>
+            <p class="hero-tagline">Dilemma distiller, conundrum concluder, reflection reliever</p>
           </div>
         `;
       }
 
       resetAllBtn.addEventListener("click", () => {
-        if (!confirm("Reset everything? This wipes the key, the system prompt, the sliders, and the conversation.")) return;
+        if (!confirm("Reset everything? This wipes the key, the sliders, and the conversation.")) return;
         Object.values(KEYS).forEach((k) => sessionStorage.removeItem(k));
         keyInput.value = "";
-        systemInput.value = DEFAULT_SYSTEM;
         modelSelect.value = DEFAULTS.model;
         tempInput.value = DEFAULTS.temperature;
         toppInput.value = DEFAULTS.top_p;
         maxtokInput.value = DEFAULTS.max_tokens;
         renderSliderValues();
         applySamplingLock();
-        syncPresetIndicator();
         syncSamplingPresetIndicator();
         showLogprobsInput.checked = false;
         applyLogprobsState();
@@ -1486,25 +1530,19 @@ Preset use cases (temperature · top-p):
         setMenu(true);
       });
 
-      async function callOpenAI({ apiKey, model, systemPrompt, messages, temperature, top_p, max_tokens, wantLogprobs, onDelta }) {
-        // Per-model quirks:
-        //  - gpt-3.5-turbo wants `max_tokens`; newer families want `max_completion_tokens`.
-        //  - gpt-5 reasoning-tuned variants reject non-default `temperature` and `top_p`,
-        //    so omit them entirely for those models.
-        //  - logprobs is only supported on non-reasoning chat models. We gate
-        //    it on the same SAMPLING_LOCKED predicate so reasoning models
-        //    silently fall back to no-logprobs instead of 400-ing.
-        //  - We always stream so students see the autoregressive token-by-token
-        //    generation live. stream_options.include_usage makes the final
-        //    chunk carry a complete usage object.
+      function buildFirstUserMessage(text) {
+        return `${XENOPHON_PROMPT}\n\n# User message\n${text}`;
+      }
+
+      async function callOpenRouter({ apiKey, model, messages, temperature, top_p, max_tokens, wantLogprobs, onDelta }) {
+        // OpenRouter exposes an OpenAI-compatible chat completions endpoint.
+        // We always stream so users see generation token by token.
         const payload = {
           model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...messages.map(({ role, content }) => ({ role, content })),
-          ],
+          messages: messages.map(({ role, content }) => ({ role, content })),
           stream: true,
           stream_options: { include_usage: true },
+          max_tokens,
         };
         if (!SAMPLING_LOCKED(model)) {
           payload.temperature = temperature;
@@ -1514,23 +1552,20 @@ Preset use cases (temperature · top-p):
             payload.top_logprobs = 5;
           }
           // When the user picks the 'Reproducible' preset (temperature 0),
-          // pin OpenAI's sampler to a fixed seed so every student who sends
+          // pin the sampler to a fixed seed so every student who sends
           // the same prompt gets byte-identical output. Best-effort per the
           // API reference — and without this, temp 0 alone is still subject
           // to backend variance.
           if (temperature === 0) payload.seed = 42;
         }
-        if (model.startsWith("gpt-3.5")) {
-          payload.max_tokens = max_tokens;
-        } else {
-          payload.max_completion_tokens = max_tokens;
-        }
 
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${apiKey}`,
+            "HTTP-Referer": window.location.href,
+            "X-Title": "Xenophon",
           },
           body: JSON.stringify(payload),
         });
@@ -1617,7 +1652,7 @@ Preset use cases (temperature · top-p):
       }
 
       // Build the coloured token-chip view for a single assistant reply, from
-      // the `logprobs.content` array OpenAI returns when logprobs is enabled.
+      // the `logprobs.content` array returned when logprobs is enabled.
       // Each chip's background is driven by the chosen token's logprob
       // (green = confident, red = uncertain). Click a chip → popover showing
       // the top-5 alternatives the model considered at that position.
@@ -1737,10 +1772,10 @@ Preset use cases (temperature · top-p):
         const meta = document.createElement("div");
         meta.className = "msg-meta user";
         meta.title = isFirstTurn
-          ? "Tokens for this turn. Includes the system prompt, which is always prepended to the first message."
+          ? "Tokens for this turn. Includes the embedded Xenophon prompt, which is prepended only to the first user message."
           : "Tokens this message added to the context.";
         meta.textContent = isFirstTurn
-          ? `${tokens.toLocaleString()} tokens (incl. system prompt)`
+          ? `${tokens.toLocaleString()} tokens (incl. Xenophon prompt)`
           : `${tokens.toLocaleString()} tokens`;
         wrap.appendChild(meta);
       }
@@ -1750,7 +1785,7 @@ Preset use cases (temperature · top-p):
         meta.className = "msg-meta";
         const bits = [];
         if (reasoningTok) bits.push("'reasoning' tokens are the model's hidden chain-of-thought, billed as output");
-        if (cachedTok) bits.push("'cached' tokens are prompt tokens that hit OpenAI's automatic prompt cache, billed at a 50% discount");
+        if (cachedTok) bits.push("'cached' tokens are prompt tokens that hit provider prompt caching, billed at a discount when supported");
         meta.title = bits.length
           ? `Tokens and cost for this reply. ${bits.join(". ")}.`
           : "Tokens and cost for this single reply";

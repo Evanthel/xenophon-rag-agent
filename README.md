@@ -1,28 +1,25 @@
-# Your personal LLM assistant
+# Xenophon
 
-A minimal LLM chatbot as a single HTML file, hosted on GitHub Pages. Fork it, make it yours, publish your own version at your own URL.
+Xenophon is a single-file reflective chatbot for distilling dilemmas, concluding conundrums, and relieving reflection. It runs as a static GitHub Pages app and uses OpenRouter-compatible chat completions so the same interface can reach multiple hosted models.
 
-## 1. Try the live demo
+# Specs
 
-Here is the [skeleton app](https://klodzikowski.github.io/lmt-chatbot/) we'll build on today. Everything you need to get started is in the app itself — open the drawer, follow the cues.
+Xenophon is implemented in `index.html` with embedded HTML, CSS, and JavaScript. The app stores the API key and settings in browser `sessionStorage`, sends chat requests directly from the browser to OpenRouter, streams model responses into the chat UI, and can export simple or detailed JSON transcripts.
 
-## 2. Fork the repository
+Repository structure:
 
-Click **Fork** at the top right of this page. GitHub makes you a copy at `https://github.com/<your-username>/lmt-chatbot`.
+- `index.html` - complete static app, including UI, settings drawer, OpenRouter request logic, markdown rendering, token/cost metadata, and transcript export.
+- `README.md` - project overview, technical specification, and change log.
+- `LICENSE` - repository license.
 
-## 3. Turn on GitHub Pages
+Runtime dependencies are loaded from CDNs in the browser:
 
-On your fork, go to **Settings → Pages**:
+- `marked` for markdown parsing.
+- `DOMPurify` for sanitizing rendered assistant markdown.
 
-- Source: **Deploy from a branch**
-- Branch: **main**, folder: **`/ (root)`**
+# Change Log
 
-Save. Wait 30–60 seconds. Your fork is live at `https://<your-username>.github.io/lmt-chatbot/`.
-
-## 4. Make it yours
-
-Open your fork in whichever environment suits you, edit `index.html`, commit, push. GitHub Pages rebuilds in about 30 seconds — refresh your URL to see the change.
-
-- **a. In an agentic IDE.** Clone your fork and open it in [OpenAI Codex](https://openai.com/codex/) — free for a limited time (unlike Claude Code). Mac users get a native app; on Windows you can use the web app or install the plugin for VS Code / DataSpell.
-- **b. In your IDE of choice with GitHub Copilot.** Clone your fork and open it in [JetBrains DataSpell](https://www.jetbrains.com/dataspell/) (recommended — free edu licence by linking your [GitHub Student account](https://education.github.com/pack)) or [VS Code](https://code.visualstudio.com/) (add the **Live Server** extension for instant reload). [GitHub Copilot](https://education.github.com/) is free for students and handles the boring edits.
-- **c. Directly in VS Code in the browser.** On your fork's main page, press `.` (the period key). GitHub opens a full [VS Code in the browser](https://github.dev) at `github.dev/<your-username>/lmt-chatbot` — no install, no clone. Commit from the Source Control panel.
+- Rebranded the app as Xenophon with new tagline, "Inquire" submit button, and "Philosophy Frames" settings section.
+- Switched from OpenAI to OpenRouter and added Gemini 2.5 Flash plus stable Gemini 2.5 Pro model options.
+- Removed the editable system prompt controls and hardcoded the Xenophon prompt into the first user message only.
+- Rethemed the UI with a pale parchment, white, and golden-accent Greek philosophy palette.
