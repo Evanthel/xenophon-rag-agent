@@ -122,6 +122,104 @@
         color: var(--error-fg);
         font-size: .9rem;
       }
+      .compare-block {
+        align-self: stretch;
+        display: grid;
+        gap: .7rem;
+        margin: .15rem 0 .45rem;
+      }
+      .compare-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .7rem;
+      }
+      .compare-card {
+        background: var(--bubble-assistant);
+        border: 1px solid var(--border-strong);
+        border-radius: 14px;
+        padding: .8rem .85rem;
+        min-width: 0;
+      }
+      .compare-card.rag {
+        border-color: var(--accent-strong);
+        box-shadow: 0 10px 24px rgba(159, 122, 34, .08);
+      }
+      .compare-label {
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: .45rem;
+      }
+      .compare-label.rag { color: var(--accent); }
+      .compare-card-body {
+        min-width: 0;
+      }
+      .compare-card-body p,
+      .compare-card-body ul,
+      .compare-card-body ol,
+      .compare-card-body pre,
+      .compare-card-body blockquote,
+      .compare-card-body table,
+      .compare-card-body h1,
+      .compare-card-body h2,
+      .compare-card-body h3,
+      .compare-card-body h4 {
+        margin-top: 0;
+      }
+      .compare-card-body p { margin-bottom: .5rem; }
+      .compare-card-body p:last-child { margin-bottom: 0; }
+      .retrieved-context {
+        background: rgba(239, 231, 210, .65);
+        border: 1px solid var(--border-strong);
+        border-radius: 12px;
+        padding: .7rem .8rem;
+      }
+      .retrieved-context summary {
+        cursor: pointer;
+        font-size: .82rem;
+        font-weight: 600;
+        color: var(--fg);
+      }
+      .retrieved-context[open] summary {
+        margin-bottom: .65rem;
+      }
+      .retrieved-context-list {
+        display: grid;
+        gap: .6rem;
+      }
+      .retrieved-source {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: .65rem .7rem;
+      }
+      .retrieved-source-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .45rem .7rem;
+        align-items: baseline;
+        margin-bottom: .35rem;
+      }
+      .retrieved-source-citation {
+        font-size: .75rem;
+        font-weight: 600;
+        color: var(--accent);
+      }
+      .retrieved-source-score {
+        font-size: .72rem;
+        color: var(--muted);
+      }
+      .retrieved-source-path {
+        font-size: .72rem;
+        color: var(--muted);
+      }
+      .retrieved-source-excerpt {
+        font-size: .8rem;
+        color: var(--fg);
+        white-space: pre-wrap;
+      }
       /* Small per-message meta line below bubbles. */
       .msg-meta {
         align-self: flex-start;
@@ -363,6 +461,16 @@
       body[data-sampling-locked="true"] .field.sampling .value {
         color: var(--muted);
         text-decoration: line-through;
+      }
+      #rag-logprobs-note { display: none; }
+      body[data-response-mode="rag"] #rag-logprobs-note,
+      body[data-response-mode="compare"] #rag-logprobs-note {
+        display: block;
+      }
+      @media (max-width: 720px) {
+        .compare-grid {
+          grid-template-columns: 1fr;
+        }
       }
       /* Hero (empty-state landing) */
       .hero {
@@ -766,6 +874,57 @@
         </div>
 
         <div class="section-heading">
+          Retrieval Augmented Generation
+          <button type="button" class="help-tip wide" data-help="Standard calls the model directly with no retrieval.
+
+RAG sends the same conversation to a Supabase Edge Function, retrieves matching chunks, and instructs the model to treat them as high-priority context.
+
+Compare runs both paths side by side and exposes the retrieved chunks below the RAG answer." aria-label="About RAG">?</button>
+        </div>
+
+        <div class="field">
+          <div class="field-header">
+            <label for="response-mode">Response mode</label>
+          </div>
+          <select id="response-mode">
+            <option value="standard">Standard · no retrieval</option>
+            <option value="rag">RAG · retrieved context first</option>
+            <option value="compare">Compare · Standard vs RAG</option>
+          </select>
+        </div>
+        <div class="field-note">Changing the response mode clears the current conversation so the baseline and RAG histories stay comparable.</div>
+
+        <div class="field">
+          <div class="field-header">
+            <label for="supabase-url">Supabase project URL</label>
+          </div>
+          <input id="supabase-url" type="text" placeholder="https://project-ref.supabase.co" autocomplete="off" />
+        </div>
+
+        <div class="field">
+          <div class="field-header">
+            <label for="supabase-key">Supabase publishable key</label>
+          </div>
+          <input id="supabase-key" type="text" placeholder="sb_publishable_..." autocomplete="off" />
+        </div>
+
+        <div class="field">
+          <div class="field-header">
+            <label for="rag-match-count">Retrieved chunks</label>
+            <span class="value" id="rag-match-count-value">4</span>
+          </div>
+          <input type="range" id="rag-match-count" min="2" max="8" step="1" value="4" />
+        </div>
+
+        <div class="field">
+          <div class="field-header">
+            <label for="rag-threshold">Similarity threshold</label>
+            <span class="value" id="rag-threshold-value">0.55</span>
+          </div>
+          <input type="range" id="rag-threshold" min="0.3" max="0.9" step="0.05" value="0.55" />
+        </div>
+
+        <div class="section-heading">
           Philosophy Frames
           <button type="button" class="help-tip wide" data-help="Temperature and top-p both control how random the reply is, but in different ways. Best practice: change one at a time so you can tell which knob caused a shift.
 
@@ -816,6 +975,9 @@ Preset use cases (temperature · top-p):
         <div class="locked-note" id="logprobs-locked-note">
           Token probabilities are unavailable for this model/provider. The reply will render as normal markdown.
         </div>
+        <div class="locked-note" id="rag-logprobs-note">
+          Token probabilities are only available in Standard mode. RAG and Compare use full-answer responses so the retrieved citations stay coherent.
+        </div>
 
         <div class="field">
           <div class="field-header">
@@ -853,6 +1015,7 @@ Preset use cases (temperature · top-p):
         <div class="hero" id="placeholder">
           <h1 class="hero-title">Xenophon</h1>
           <p class="hero-tagline">Dilemma distiller, conundrum concluder, reflection reliever</p>
+          <p class="hero-hint">Run the same prompt through Standard and Supabase-backed RAG, then inspect the retrieved source chunks and citations below the RAG answer.</p>
         </div>
       </main>
 
@@ -1032,6 +1195,11 @@ When to use: SYSTEMS THINKING
 Short description: Understand the force behind exponential changes.`;
       const DEFAULTS = {
         model: "google/gemini-2.5-flash",
+        response_mode: "compare",
+        supabase_url: "https://sjhznnsniowvchsnicno.supabase.co",
+        supabase_key: "sb_publishable_3EbtNUasHCUyVDE-oSnJzQ_VBcSdVqV",
+        rag_match_count: 4,
+        rag_threshold: 0.55,
         temperature: 0.8,
         top_p: 1.0,
         max_tokens: 1024,
@@ -1094,6 +1262,11 @@ Short description: Understand the force behind exponential changes.`;
       const KEYS = {
         apiKey: "lmt-chatbot-openrouter-key",
         model: "lmt-chatbot-model",
+        response_mode: "lmt-chatbot-response-mode",
+        supabase_url: "lmt-chatbot-supabase-url",
+        supabase_key: "lmt-chatbot-supabase-key",
+        rag_match_count: "lmt-chatbot-rag-match-count",
+        rag_threshold: "lmt-chatbot-rag-threshold",
         temperature: "lmt-chatbot-temperature",
         top_p: "lmt-chatbot-top-p",
         max_tokens: "lmt-chatbot-max-tokens",
@@ -1108,6 +1281,13 @@ Short description: Understand the force behind exponential changes.`;
 
       const keyInput = document.getElementById("key");
       const modelSelect = document.getElementById("model");
+      const responseModeSelect = document.getElementById("response-mode");
+      const supabaseUrlInput = document.getElementById("supabase-url");
+      const supabaseKeyInput = document.getElementById("supabase-key");
+      const ragMatchCountInput = document.getElementById("rag-match-count");
+      const ragThresholdInput = document.getElementById("rag-threshold");
+      const ragMatchCountValue = document.getElementById("rag-match-count-value");
+      const ragThresholdValue = document.getElementById("rag-threshold-value");
       const tempInput = document.getElementById("temp");
       const toppInput = document.getElementById("topp");
       const maxtokInput = document.getElementById("maxtok");
@@ -1135,6 +1315,8 @@ Short description: Understand the force behind exponential changes.`;
       const resetAllBtn = document.getElementById("reset-all");
 
       const history = [];
+      const ragHistory = [];
+      const transcriptTurns = [];
       let tokensIn = 0;
       let tokensOut = 0;
       let tokensCached = 0;
@@ -1143,11 +1325,18 @@ Short description: Understand the force behind exponential changes.`;
       // delta in usage.prompt_tokens between successive API responses.
       let prevPromptTokens = 0;
       let prevCompletionTokens = 0;
+      let prevRagPromptTokens = 0;
+      let prevRagCompletionTokens = 0;
 
       // Hydrate controls from sessionStorage.
       keyInput.value = sessionStorage.getItem(KEYS.apiKey) || "";
       modelSelect.value = sessionStorage.getItem(KEYS.model) || DEFAULTS.model;
       if (!modelSelect.value) modelSelect.value = DEFAULTS.model;
+      responseModeSelect.value = sessionStorage.getItem(KEYS.response_mode) || DEFAULTS.response_mode;
+      supabaseUrlInput.value = sessionStorage.getItem(KEYS.supabase_url) || DEFAULTS.supabase_url;
+      supabaseKeyInput.value = sessionStorage.getItem(KEYS.supabase_key) || DEFAULTS.supabase_key;
+      ragMatchCountInput.value = sessionStorage.getItem(KEYS.rag_match_count) ?? DEFAULTS.rag_match_count;
+      ragThresholdInput.value = sessionStorage.getItem(KEYS.rag_threshold) ?? DEFAULTS.rag_threshold;
       tempInput.value = sessionStorage.getItem(KEYS.temperature) ?? DEFAULTS.temperature;
       toppInput.value = sessionStorage.getItem(KEYS.top_p) ?? DEFAULTS.top_p;
       maxtokInput.value = sessionStorage.getItem(KEYS.max_tokens) ?? DEFAULTS.max_tokens;
@@ -1157,6 +1346,16 @@ Short description: Understand the force behind exponential changes.`;
       // Persist on input.
       keyInput.addEventListener("input", () => setOrClear(KEYS.apiKey, keyInput.value));
       modelSelect.addEventListener("change", () => setOrClear(KEYS.model, modelSelect.value));
+      supabaseUrlInput.addEventListener("input", () => setOrClear(KEYS.supabase_url, supabaseUrlInput.value));
+      supabaseKeyInput.addEventListener("input", () => setOrClear(KEYS.supabase_key, supabaseKeyInput.value));
+      ragMatchCountInput.addEventListener("input", () => {
+        sessionStorage.setItem(KEYS.rag_match_count, ragMatchCountInput.value);
+        renderSliderValues();
+      });
+      ragThresholdInput.addEventListener("input", () => {
+        sessionStorage.setItem(KEYS.rag_threshold, ragThresholdInput.value);
+        renderSliderValues();
+      });
       tempInput.addEventListener("input", () => {
         sessionStorage.setItem(KEYS.temperature, tempInput.value);
         renderSliderValues();
@@ -1211,6 +1410,33 @@ Short description: Understand the force behind exponential changes.`;
         document.body.dataset.logprobsOn = showLogprobsInput.checked ? "true" : "false";
       }
       applyLogprobsState();
+
+      function hasConversation() {
+        return chatEl.querySelectorAll(".msg, .compare-card").length > 0;
+      }
+
+      function applyResponseModeState() {
+        document.body.dataset.responseMode = responseModeSelect.value;
+        const standardMode = responseModeSelect.value === "standard";
+        showLogprobsInput.disabled = !standardMode;
+        if (!standardMode) showLogprobsInput.checked = false;
+        applyLogprobsState();
+      }
+      responseModeSelect.addEventListener("change", () => {
+        const previousMode = sessionStorage.getItem(KEYS.response_mode) || DEFAULTS.response_mode;
+        if (hasConversation() && responseModeSelect.value !== previousMode) {
+          const proceed = confirm("Change response mode and clear the current conversation?");
+          if (!proceed) {
+            responseModeSelect.value = previousMode;
+            applyResponseModeState();
+            return;
+          }
+          resetConversation();
+        }
+        sessionStorage.setItem(KEYS.response_mode, responseModeSelect.value);
+        applyResponseModeState();
+      });
+      applyResponseModeState();
 
       // Lock sampling-slider UI when a sampling-locked model is selected.
       function applySamplingLock() {
@@ -1294,18 +1520,34 @@ Short description: Understand the force behind exponential changes.`;
           setMenu(true);
           return;
         }
+        if (responseModeSelect.value !== "standard" && (!supabaseUrlInput.value || !supabaseKeyInput.value)) {
+          addMessage("error", "Add the Supabase project URL and publishable key in Settings first.");
+          setMenu(true);
+          return;
+        }
 
         const placeholderEl = document.getElementById("placeholder");
         if (placeholderEl) placeholderEl.remove();
         const userBubble = addMessage("user", text);
-        const isFirstTurn = prevPromptTokens === 0;
-        history.push({
-          role: "user",
-          content: isFirstTurn ? buildFirstUserMessage(text) : text,
-          timestamp: new Date().toISOString(),
-        });
         input.value = "";
-        await sendCompletion({ userBubble, isFirstTurn, newUserMessage: true });
+        if (responseModeSelect.value === "standard") {
+          const isFirstTurn = prevPromptTokens === 0;
+          history.push(buildUserMessage(text, isFirstTurn));
+          await sendCompletion({ userBubble, isFirstTurn, newUserMessage: true, userText: text });
+          return;
+        }
+        if (responseModeSelect.value === "rag") {
+          const isFirstTurn = prevRagPromptTokens === 0;
+          ragHistory.push(buildUserMessage(text, isFirstTurn));
+          await sendRagCompletion({ newUserMessage: true, userText: text });
+          return;
+        }
+
+        const standardFirstTurn = prevPromptTokens === 0;
+        const ragFirstTurn = prevRagPromptTokens === 0;
+        history.push(buildUserMessage(text, standardFirstTurn));
+        ragHistory.push(buildUserMessage(text, ragFirstTurn));
+        await sendCompareCompletion({ userText: text });
       });
 
       // Shared flow for both fresh submissions and regenerations. When
@@ -1314,7 +1556,7 @@ Short description: Understand the force behind exponential changes.`;
       // pushed user entry on error. On regeneration the user bubble already
       // has its meta from the previous successful call; we just want a fresh
       // assistant reply for the same history.
-      async function sendCompletion({ userBubble, isFirstTurn, newUserMessage }) {
+      async function sendCompletion({ userBubble, isFirstTurn, newUserMessage, userText }) {
         sendBtn.disabled = true;
         refreshToolbar();
         const loading = addMessage("assistant", "…");
@@ -1372,6 +1614,17 @@ Short description: Understand the force behind exponential changes.`;
           };
           entry[WRAP] = loading.wrap;
           history.push(entry);
+          transcriptTurns.push({
+            mode: "standard",
+            user: userText ?? history[history.length - 2]?.content ?? "",
+            assistant: {
+              reply,
+              usage,
+              finish_reason,
+              model_snapshot,
+              response_id: id,
+            },
+          });
           if (usage) {
             const inTok = usage.prompt_tokens || 0;
             const outTok = (usage.total_tokens || 0) - inTok;
@@ -1420,7 +1673,162 @@ Short description: Understand the force behind exponential changes.`;
         }
       }
 
+      async function sendRagCompletion({ newUserMessage, userText }) {
+        sendBtn.disabled = true;
+        refreshToolbar();
+        const loading = addMessage("assistant", "Consulting Supabase context…");
+
+        try {
+          const requestedAt = Date.now();
+          const result = await callRagChat({
+            supabaseUrl: supabaseUrlInput.value,
+            supabaseAnonKey: supabaseKeyInput.value,
+            openrouterApiKey: keyInput.value,
+            model: modelSelect.value,
+            messages: ragHistory,
+            temperature: parseFloat(tempInput.value),
+            top_p: parseFloat(toppInput.value),
+            max_tokens: parseInt(maxtokInput.value, 10),
+            match_count: parseInt(ragMatchCountInput.value, 10),
+            match_threshold: parseFloat(ragThresholdInput.value),
+          });
+          const latencyMs = Date.now() - requestedAt;
+          loading.bubble.innerHTML = renderMarkdown(result.reply);
+          const entry = {
+            role: "assistant",
+            content: result.reply,
+            timestamp: new Date().toISOString(),
+            model_snapshot: result.model_snapshot,
+            finish_reason: result.finish_reason,
+            usage: result.usage,
+            latency_ms: latencyMs,
+            response_id: result.id,
+            sources: result.sources,
+          };
+          entry[WRAP] = loading.wrap;
+          ragHistory.push(entry);
+          transcriptTurns.push({
+            mode: "rag",
+            user: userText ?? ragHistory[ragHistory.length - 2]?.content ?? "",
+            assistant: {
+              reply: result.reply,
+              usage: result.usage,
+              finish_reason: result.finish_reason,
+              model_snapshot: result.model_snapshot,
+              response_id: result.id,
+              sources: result.sources,
+            },
+          });
+          if (result.usage) {
+            const inTok = result.usage.prompt_tokens || 0;
+            const outTok = (result.usage.total_tokens || 0) - inTok;
+            const reasoningTok = result.usage.completion_tokens_details?.reasoning_tokens || 0;
+            const cachedTok = result.usage.prompt_tokens_details?.cached_tokens || 0;
+            tokensIn += inTok;
+            tokensOut += Math.max(0, outTok);
+            tokensCached += cachedTok;
+            const cost = estimateCost(result.usage, modelSelect.value);
+            costTotal += cost;
+            appendMeta(loading.wrap, inTok, outTok, reasoningTok, cachedTok, cost);
+            appendActionChips(loading.wrap, result.reply, { allowRegenerate: false });
+            appendRetrievedContext(loading.wrap, result.sources);
+            prevRagPromptTokens = inTok;
+            prevRagCompletionTokens = Math.max(0, outTok);
+          }
+          chatEl.scrollTop = chatEl.scrollHeight;
+        } catch (err) {
+          loading.wrap.remove();
+          addMessage("error", err.message || String(err));
+          if (newUserMessage) ragHistory.pop();
+        } finally {
+          sendBtn.disabled = false;
+          refreshToolbar();
+          input.focus();
+        }
+      }
+
+      async function sendCompareCompletion({ userText }) {
+        sendBtn.disabled = true;
+        refreshToolbar();
+        const loading = addMessage("assistant", "Comparing direct answer with RAG…");
+
+        try {
+          const latencyStartedAt = Date.now();
+          const [standardResult, ragResult] = await Promise.all([
+            callOpenRouter({
+              apiKey: keyInput.value,
+              model: modelSelect.value,
+              messages: history,
+              temperature: parseFloat(tempInput.value),
+              top_p: parseFloat(toppInput.value),
+              max_tokens: parseInt(maxtokInput.value, 10),
+              wantLogprobs: false,
+              stream: false,
+            }),
+            callRagChat({
+              supabaseUrl: supabaseUrlInput.value,
+              supabaseAnonKey: supabaseKeyInput.value,
+              openrouterApiKey: keyInput.value,
+              model: modelSelect.value,
+              messages: ragHistory,
+              temperature: parseFloat(tempInput.value),
+              top_p: parseFloat(toppInput.value),
+              max_tokens: parseInt(maxtokInput.value, 10),
+              match_count: parseInt(ragMatchCountInput.value, 10),
+              match_threshold: parseFloat(ragThresholdInput.value),
+            }),
+          ]);
+          const latencyMs = Date.now() - latencyStartedAt;
+          loading.wrap.remove();
+          renderCompareResult({ standardResult, ragResult });
+
+          const standardEntry = {
+            role: "assistant",
+            content: standardResult.reply,
+            timestamp: new Date().toISOString(),
+            model_snapshot: standardResult.model_snapshot,
+            finish_reason: standardResult.finish_reason,
+            usage: standardResult.usage,
+            latency_ms: latencyMs,
+            response_id: standardResult.id,
+          };
+          const ragEntry = {
+            role: "assistant",
+            content: ragResult.reply,
+            timestamp: new Date().toISOString(),
+            model_snapshot: ragResult.model_snapshot,
+            finish_reason: ragResult.finish_reason,
+            usage: ragResult.usage,
+            latency_ms: latencyMs,
+            response_id: ragResult.id,
+            sources: ragResult.sources,
+          };
+          history.push(standardEntry);
+          ragHistory.push(ragEntry);
+          transcriptTurns.push({
+            mode: "compare",
+            user: userText,
+            standard: standardEntry,
+            rag: ragEntry,
+          });
+
+          trackUsage(standardResult.usage, modelSelect.value, "standard");
+          trackUsage(ragResult.usage, modelSelect.value, "rag");
+          chatEl.scrollTop = chatEl.scrollHeight;
+        } catch (err) {
+          loading.wrap.remove();
+          addMessage("error", err.message || String(err));
+          history.pop();
+          ragHistory.pop();
+        } finally {
+          sendBtn.disabled = false;
+          refreshToolbar();
+          input.focus();
+        }
+      }
+
       async function regenerate() {
+        if (responseModeSelect.value !== "standard") return;
         if (!history.length) return;
         const last = history[history.length - 1];
         if (last.role !== "assistant") return;
@@ -1428,6 +1836,9 @@ Short description: Understand the force behind exponential changes.`;
         // one with the same prior context. Running totals keep accumulating —
         // the old tokens were paid for, the new tokens add on top.
         history.pop();
+        if (transcriptTurns.length && transcriptTurns[transcriptTurns.length - 1].mode === "standard") {
+          transcriptTurns.pop();
+        }
         last[WRAP]?.remove();
         await sendCompletion({
           userBubble: null,
@@ -1447,6 +1858,7 @@ Short description: Understand the force behind exponential changes.`;
         const basePayload = {
           exported_at: new Date().toISOString(),
           model: modelSelect.value,
+          response_mode: responseModeSelect.value,
         };
         let payload;
         if (detailed) {
@@ -1457,14 +1869,35 @@ Short description: Understand the force behind exponential changes.`;
               top_p: parseFloat(toppInput.value),
               max_tokens: parseInt(maxtokInput.value, 10),
             },
+            rag: {
+              supabase_url: supabaseUrlInput.value,
+              match_count: parseInt(ragMatchCountInput.value, 10),
+              match_threshold: parseFloat(ragThresholdInput.value),
+            },
             tokens: { prompt: tokensIn, completion: tokensOut },
             estimated_cost_usd: Number(costTotal.toFixed(6)),
-            messages: history,
+            standard_messages: history,
+            rag_messages: ragHistory,
+            turns: transcriptTurns,
           };
         } else {
           payload = {
             ...basePayload,
-            messages: history.map(({ role, content }) => ({ role, content })),
+            turns: transcriptTurns.map((turn) => {
+              if (turn.mode === "compare") {
+                return {
+                  mode: turn.mode,
+                  user: turn.user,
+                  standard_reply: turn.standard.content,
+                  rag_reply: turn.rag.content,
+                };
+              }
+              return {
+                mode: turn.mode,
+                user: turn.user,
+                assistant_reply: turn.assistant.reply,
+              };
+            }),
           };
         }
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -1483,17 +1916,9 @@ Short description: Understand the force behind exponential changes.`;
       downloadDetailedBtn.addEventListener("click", () => downloadJson(true));
 
       clearBtn.addEventListener("click", () => {
-        if (!history.length) return;
+        if (!hasConversation()) return;
         if (!confirm("Clear the conversation? Key and settings stay.")) return;
-        history.length = 0;
-        tokensIn = 0;
-        tokensOut = 0;
-        tokensCached = 0;
-        costTotal = 0;
-        prevPromptTokens = 0;
-        prevCompletionTokens = 0;
-        renderHero();
-        refreshToolbar();
+        resetConversation();
       });
 
       function renderHero() {
@@ -1501,6 +1926,7 @@ Short description: Understand the force behind exponential changes.`;
           <div class="hero" id="placeholder">
             <h1 class="hero-title">Xenophon</h1>
             <p class="hero-tagline">Dilemma distiller, conundrum concluder, reflection reliever</p>
+            <p class="hero-hint">Run the same prompt through Standard and Supabase-backed RAG, then inspect the retrieved source chunks and citations below the RAG answer.</p>
           </div>
         `;
       }
@@ -1518,36 +1944,59 @@ Short description: Understand the force behind exponential changes.`;
         syncSamplingPresetIndicator();
         showLogprobsInput.checked = false;
         applyLogprobsState();
+        responseModeSelect.value = DEFAULTS.response_mode;
+        supabaseUrlInput.value = DEFAULTS.supabase_url;
+        supabaseKeyInput.value = DEFAULTS.supabase_key;
+        ragMatchCountInput.value = DEFAULTS.rag_match_count;
+        ragThresholdInput.value = DEFAULTS.rag_threshold;
+        applyResponseModeState();
+        resetConversation();
+        refreshToolbar();
+        setMenu(true);
+      });
+
+      function resetConversation() {
         history.length = 0;
+        ragHistory.length = 0;
+        transcriptTurns.length = 0;
         tokensIn = 0;
         tokensOut = 0;
         tokensCached = 0;
         costTotal = 0;
         prevPromptTokens = 0;
         prevCompletionTokens = 0;
+        prevRagPromptTokens = 0;
+        prevRagCompletionTokens = 0;
         renderHero();
         refreshToolbar();
-        setMenu(true);
-      });
+      }
 
       function buildFirstUserMessage(text) {
         return `${XENOPHON_PROMPT}\n\n# User message\n${text}`;
       }
 
-      async function callOpenRouter({ apiKey, model, messages, temperature, top_p, max_tokens, wantLogprobs, onDelta }) {
+      function buildUserMessage(text, isFirstTurn) {
+        return {
+          role: "user",
+          content: isFirstTurn ? buildFirstUserMessage(text) : text,
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      async function callOpenRouter({ apiKey, model, messages, temperature, top_p, max_tokens, wantLogprobs, onDelta, stream = true }) {
         // OpenRouter exposes an OpenAI-compatible chat completions endpoint.
         // We always stream so users see generation token by token.
         const payload = {
           model,
           messages: messages.map(({ role, content }) => ({ role, content })),
-          stream: true,
-          stream_options: { include_usage: true },
+          stream,
           max_tokens,
         };
+        if (stream) payload.stream_options = { include_usage: true };
         if (!SAMPLING_LOCKED(model)) {
           payload.temperature = temperature;
           payload.top_p = top_p;
-          if (wantLogprobs) {
+          if (stream && wantLogprobs) {
             payload.logprobs = true;
             payload.top_logprobs = 5;
           }
@@ -1574,6 +2023,25 @@ Short description: Understand the force behind exponential changes.`;
           const body = await response.json().catch(() => ({}));
           const msg = body?.error?.message ?? `HTTP ${response.status}`;
           throw new Error(msg);
+        }
+
+        if (!stream) {
+          const body = await response.json();
+          const choice = body?.choices?.[0];
+          const content = choice?.message?.content;
+          const reply = typeof content === "string"
+            ? content
+            : Array.isArray(content)
+              ? content.map((part) => part?.text ?? "").join("")
+              : "";
+          return {
+            reply,
+            usage: body?.usage ?? null,
+            finish_reason: choice?.finish_reason ?? null,
+            model_snapshot: body?.model ?? model,
+            id: body?.id ?? null,
+            logprobs: null,
+          };
         }
 
         const reader = response.body.getReader();
@@ -1639,6 +2107,43 @@ Short description: Understand the force behind exponential changes.`;
         };
       }
 
+      async function callRagChat({
+        supabaseUrl,
+        supabaseAnonKey,
+        openrouterApiKey,
+        model,
+        messages,
+        temperature,
+        top_p,
+        max_tokens,
+        match_count,
+        match_threshold,
+      }) {
+        const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/functions/v1/rag-chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${supabaseAnonKey}`,
+          },
+          body: JSON.stringify({
+            openrouterApiKey,
+            model,
+            messages: messages.map(({ role, content }) => ({ role, content })),
+            temperature,
+            top_p,
+            max_tokens,
+            match_count,
+            match_threshold,
+          }),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(body?.error ?? `Supabase function HTTP ${response.status}`);
+        }
+        return body;
+      }
+
       function addMessage(role, text) {
         const wrap = document.createElement("div");
         wrap.style.display = "contents";
@@ -1649,6 +2154,47 @@ Short description: Understand the force behind exponential changes.`;
         chatEl.appendChild(wrap);
         bubble.scrollIntoView({ behavior: "smooth", block: "end" });
         return { wrap, bubble };
+      }
+
+      function renderCompareResult({ standardResult, ragResult }) {
+        const wrap = document.createElement("div");
+        wrap.className = "compare-block";
+
+        const grid = document.createElement("div");
+        grid.className = "compare-grid";
+        grid.appendChild(buildCompareCard("No RAG", standardResult.reply, standardResult.usage));
+        grid.appendChild(buildCompareCard("RAG", ragResult.reply, ragResult.usage, true));
+        wrap.appendChild(grid);
+
+        const context = buildRetrievedContext(ragResult.sources);
+        if (context) wrap.appendChild(context);
+
+        chatEl.appendChild(wrap);
+      }
+
+      function buildCompareCard(label, reply, usage, isRag = false) {
+        const card = document.createElement("section");
+        card.className = `compare-card${isRag ? " rag" : ""}`;
+
+        const heading = document.createElement("div");
+        heading.className = `compare-label${isRag ? " rag" : ""}`;
+        heading.textContent = label;
+        card.appendChild(heading);
+
+        const body = document.createElement("div");
+        body.className = "compare-card-body";
+        body.innerHTML = renderMarkdown(reply);
+        card.appendChild(body);
+
+        if (usage) {
+          const inTok = usage.prompt_tokens || 0;
+          const outTok = (usage.total_tokens || 0) - inTok;
+          const reasoningTok = usage.completion_tokens_details?.reasoning_tokens || 0;
+          const cachedTok = usage.prompt_tokens_details?.cached_tokens || 0;
+          appendMeta(card, inTok, outTok, reasoningTok, cachedTok, estimateCost(usage, modelSelect.value));
+        }
+        appendActionChips(card, reply, { allowRegenerate: false });
+        return card;
       }
 
       // Build the coloured token-chip view for a single assistant reply, from
@@ -1736,7 +2282,8 @@ Short description: Understand the force behind exponential changes.`;
         setTimeout(() => document.addEventListener("click", dismiss), 0);
       }
 
-      function appendActionChips(wrap, textForCopy) {
+      function appendActionChips(wrap, textForCopy, options = {}) {
+        const { allowRegenerate = true } = options;
         const row = document.createElement("div");
         row.className = "msg-actions";
         const copyBtn = document.createElement("button");
@@ -1758,14 +2305,67 @@ Short description: Understand the force behind exponential changes.`;
             setTimeout(() => (copyBtn.textContent = "Copy"), 1500);
           }
         });
-        const regenBtn = document.createElement("button");
-        regenBtn.type = "button";
-        regenBtn.className = "action-chip";
-        regenBtn.textContent = "Regenerate";
-        regenBtn.title = "Ask the model for a different reply to the same prompt";
-        regenBtn.addEventListener("click", () => regenerate());
-        row.append(copyBtn, regenBtn);
+        row.appendChild(copyBtn);
+        if (allowRegenerate) {
+          const regenBtn = document.createElement("button");
+          regenBtn.type = "button";
+          regenBtn.className = "action-chip";
+          regenBtn.textContent = "Regenerate";
+          regenBtn.title = "Ask the model for a different reply to the same prompt";
+          regenBtn.addEventListener("click", () => regenerate());
+          row.appendChild(regenBtn);
+        }
         wrap.appendChild(row);
+      }
+
+      function buildRetrievedContext(sources) {
+        if (!Array.isArray(sources) || !sources.length) return null;
+        const details = document.createElement("details");
+        details.className = "retrieved-context";
+        details.open = true;
+
+        const summary = document.createElement("summary");
+        summary.textContent = `Retrieved context (${sources.length})`;
+        details.appendChild(summary);
+
+        const list = document.createElement("div");
+        list.className = "retrieved-context-list";
+        for (const source of sources) {
+          const item = document.createElement("section");
+          item.className = "retrieved-source";
+
+          const head = document.createElement("div");
+          head.className = "retrieved-source-head";
+
+          const citation = document.createElement("span");
+          citation.className = "retrieved-source-citation";
+          citation.textContent = source.citation;
+          head.appendChild(citation);
+
+          const score = document.createElement("span");
+          score.className = "retrieved-source-score";
+          score.textContent = `similarity ${Number(source.similarity || 0).toFixed(2)}`;
+          head.appendChild(score);
+
+          const path = document.createElement("span");
+          path.className = "retrieved-source-path";
+          path.textContent = source.source_path;
+          head.appendChild(path);
+
+          const excerpt = document.createElement("div");
+          excerpt.className = "retrieved-source-excerpt";
+          excerpt.textContent = source.excerpt;
+
+          item.append(head, excerpt);
+          list.appendChild(item);
+        }
+        details.appendChild(list);
+        return details;
+      }
+
+      function appendRetrievedContext(wrap, sources) {
+        const context = buildRetrievedContext(sources);
+        if (context) wrap.appendChild(context);
       }
 
       function appendUserMeta(wrap, tokens, isFirstTurn) {
@@ -1803,11 +2403,11 @@ Short description: Understand the force behind exponential changes.`;
       }
 
       function refreshToolbar() {
-        const hasHistory = history.length > 0;
-        downloadSimpleBtn.disabled = !hasHistory;
-        downloadDetailedBtn.disabled = !hasHistory;
-        clearBtn.disabled = !hasHistory;
-        statMsgs.textContent = history.length;
+        const hasTranscript = transcriptTurns.length > 0;
+        downloadSimpleBtn.disabled = !hasTranscript;
+        downloadDetailedBtn.disabled = !hasTranscript;
+        clearBtn.disabled = !hasConversation();
+        statMsgs.textContent = String(chatEl.querySelectorAll(".msg, .compare-card").length);
         statIn.textContent = tokensIn.toLocaleString();
         statOut.textContent = tokensOut.toLocaleString();
         statCost.textContent = formatCost(costTotal);
@@ -1826,11 +2426,31 @@ Short description: Understand the force behind exponential changes.`;
         tempValue.textContent = parseFloat(tempInput.value).toFixed(1);
         toppValue.textContent = parseFloat(toppInput.value).toFixed(2);
         maxtokValue.textContent = parseInt(maxtokInput.value, 10).toLocaleString();
+        ragMatchCountValue.textContent = parseInt(ragMatchCountInput.value, 10).toLocaleString();
+        ragThresholdValue.textContent = parseFloat(ragThresholdInput.value).toFixed(2);
       }
 
       function setOrClear(storageKey, value) {
         if (value) sessionStorage.setItem(storageKey, value);
         else sessionStorage.removeItem(storageKey);
+      }
+
+      function trackUsage(usage, model, kind) {
+        if (!usage) return;
+        const inTok = usage.prompt_tokens || 0;
+        const outTok = (usage.total_tokens || 0) - inTok;
+        const cachedTok = usage.prompt_tokens_details?.cached_tokens || 0;
+        tokensIn += inTok;
+        tokensOut += Math.max(0, outTok);
+        tokensCached += cachedTok;
+        costTotal += estimateCost(usage, model);
+        if (kind === "rag") {
+          prevRagPromptTokens = inTok;
+          prevRagCompletionTokens = Math.max(0, outTok);
+        } else {
+          prevPromptTokens = inTok;
+          prevCompletionTokens = Math.max(0, outTok);
+        }
       }
     </script>
   </body>

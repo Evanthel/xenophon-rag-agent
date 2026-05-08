@@ -6,3 +6,7 @@ node_modules/
 *.log
 .env
 .env.local
+.venv/
+venv/
+__pycache__/
+/lbdl.pdf
