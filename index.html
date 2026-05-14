@@ -220,6 +220,127 @@
         color: var(--fg);
         white-space: pre-wrap;
       }
+      .pipeline-trace {
+        background: linear-gradient(180deg, rgba(255, 253, 247, .98), rgba(239, 231, 210, .7));
+        border: 1px solid var(--border-strong);
+        border-radius: 14px;
+        padding: .8rem .85rem;
+        margin-top: .55rem;
+      }
+      .pipeline-trace-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: .75rem;
+        flex-wrap: wrap;
+        margin-bottom: .7rem;
+      }
+      .pipeline-trace-title {
+        font-size: .78rem;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .pipeline-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: .2rem .55rem;
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .03em;
+      }
+      .pipeline-badge.grounded {
+        background: rgba(47, 111, 66, .12);
+        border: 1px solid rgba(47, 111, 66, .35);
+        color: #2f6f42;
+      }
+      .pipeline-badge.weak {
+        background: rgba(159, 122, 34, .12);
+        border: 1px solid rgba(159, 122, 34, .35);
+        color: #8a6111;
+      }
+      .pipeline-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: .55rem;
+        margin-bottom: .75rem;
+      }
+      .pipeline-stat {
+        background: rgba(255, 255, 255, .5);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: .55rem .6rem;
+      }
+      .pipeline-stat-label {
+        display: block;
+        font-size: .68rem;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: var(--muted);
+        margin-bottom: .22rem;
+      }
+      .pipeline-stat-value {
+        font-size: .92rem;
+        font-weight: 600;
+        color: var(--fg);
+      }
+      .pipeline-steps {
+        display: grid;
+        gap: .55rem;
+      }
+      .pipeline-step {
+        background: rgba(255, 255, 255, .56);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: .6rem .65rem;
+      }
+      .pipeline-step-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: .6rem;
+        flex-wrap: wrap;
+        margin-bottom: .3rem;
+      }
+      .pipeline-step-label {
+        font-size: .82rem;
+        font-weight: 600;
+      }
+      .pipeline-step-status {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: .68rem;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        border-radius: 999px;
+        padding: .16rem .45rem;
+      }
+      .pipeline-step-status.done {
+        background: rgba(47, 111, 66, .12);
+        color: #2f6f42;
+      }
+      .pipeline-step-status.skipped {
+        background: rgba(117, 107, 85, .12);
+        color: var(--muted);
+      }
+      .pipeline-step-status.low-confidence {
+        background: rgba(159, 122, 34, .12);
+        color: #8a6111;
+      }
+      .pipeline-step-summary {
+        font-size: .78rem;
+        color: var(--fg);
+      }
+      .pipeline-step-list {
+        margin: .38rem 0 0;
+        padding-left: 1rem;
+        font-size: .76rem;
+        color: var(--muted);
+      }
+      .pipeline-step-list li {
+        margin: .14rem 0;
+      }
       /* Small per-message meta line below bubbles. */
       .msg-meta {
         align-self: flex-start;
@@ -464,7 +585,8 @@
       }
       #rag-logprobs-note { display: none; }
       body[data-response-mode="rag"] #rag-logprobs-note,
-      body[data-response-mode="compare"] #rag-logprobs-note {
+      body[data-response-mode="compare"] #rag-logprobs-note,
+      body[data-response-mode="agent"] #rag-logprobs-note {
         display: block;
       }
       @media (max-width: 720px) {
@@ -879,6 +1001,8 @@
 
 RAG sends the same conversation to a Supabase Edge Function, retrieves matching chunks, and instructs the model to treat them as high-priority context.
 
+Agent adds a lightweight pipeline: plan the question, rewrite retrieval queries, retrieve evidence, answer with citations, then verify how well grounded the answer is.
+
 Compare runs both paths side by side and exposes the retrieved chunks below the RAG answer." aria-label="About RAG">?</button>
         </div>
 
@@ -889,6 +1013,7 @@ Compare runs both paths side by side and exposes the retrieved chunks below the 
           <select id="response-mode">
             <option value="standard">Standard · no retrieval</option>
             <option value="rag">RAG · retrieved context first</option>
+            <option value="agent">Agent · plan, retrieve, verify</option>
             <option value="compare">Compare · Standard vs RAG</option>
           </select>
         </div>
@@ -1015,7 +1140,7 @@ Preset use cases (temperature · top-p):
         <div class="hero" id="placeholder">
           <h1 class="hero-title">Xenophon</h1>
           <p class="hero-tagline">Dilemma distiller, conundrum concluder, reflection reliever</p>
-          <p class="hero-hint">Run the same prompt through Standard and Supabase-backed RAG, then inspect the retrieved source chunks and citations below the RAG answer.</p>
+          <p class="hero-hint">Run Standard, RAG, or the Agent pipeline mode, then inspect the retrieved chunks, citations, and visible pipeline trace below the answer.</p>
         </div>
       </main>
 
@@ -1542,6 +1667,12 @@ Short description: Understand the force behind exponential changes.`;
           await sendRagCompletion({ newUserMessage: true, userText: text });
           return;
         }
+        if (responseModeSelect.value === "agent") {
+          const isFirstTurn = prevRagPromptTokens === 0;
+          ragHistory.push(buildUserMessage(text, isFirstTurn));
+          await sendAgentCompletion({ newUserMessage: true, userText: text });
+          return;
+        }
 
         const standardFirstTurn = prevPromptTokens === 0;
         const ragFirstTurn = prevRagPromptTokens === 0;
@@ -1747,6 +1878,84 @@ Short description: Understand the force behind exponential changes.`;
         }
       }
 
+      async function sendAgentCompletion({ newUserMessage, userText }) {
+        sendBtn.disabled = true;
+        refreshToolbar();
+        const loading = addMessage("assistant", "Running agent pipeline…");
+
+        try {
+          const requestedAt = Date.now();
+          const result = await callRagChat({
+            supabaseUrl: supabaseUrlInput.value,
+            supabaseAnonKey: supabaseKeyInput.value,
+            openrouterApiKey: keyInput.value,
+            model: modelSelect.value,
+            messages: ragHistory,
+            temperature: parseFloat(tempInput.value),
+            top_p: parseFloat(toppInput.value),
+            max_tokens: parseInt(maxtokInput.value, 10),
+            match_count: parseInt(ragMatchCountInput.value, 10),
+            match_threshold: parseFloat(ragThresholdInput.value),
+            pipeline_mode: "agent",
+          });
+          const latencyMs = Date.now() - requestedAt;
+          loading.bubble.innerHTML = renderMarkdown(result.reply);
+          const entry = {
+            role: "assistant",
+            content: result.reply,
+            timestamp: new Date().toISOString(),
+            model_snapshot: result.model_snapshot,
+            finish_reason: result.finish_reason,
+            usage: result.usage,
+            latency_ms: latencyMs,
+            response_id: result.id,
+            sources: result.sources,
+            trace: result.trace,
+          };
+          entry[WRAP] = loading.wrap;
+          ragHistory.push(entry);
+          transcriptTurns.push({
+            mode: "agent",
+            user: userText ?? ragHistory[ragHistory.length - 2]?.content ?? "",
+            assistant: {
+              reply: result.reply,
+              usage: result.usage,
+              finish_reason: result.finish_reason,
+              model_snapshot: result.model_snapshot,
+              response_id: result.id,
+              sources: result.sources,
+              trace: result.trace,
+            },
+          });
+          appendActionChips(loading.wrap, result.reply, { allowRegenerate: false });
+          appendPipelineTrace(loading.wrap, result.trace);
+          appendRetrievedContext(loading.wrap, result.sources);
+          if (result.usage) {
+            const inTok = result.usage.prompt_tokens || 0;
+            const outTok = (result.usage.total_tokens || 0) - inTok;
+            const reasoningTok = result.usage.completion_tokens_details?.reasoning_tokens || 0;
+            const cachedTok = result.usage.prompt_tokens_details?.cached_tokens || 0;
+            tokensIn += inTok;
+            tokensOut += Math.max(0, outTok);
+            tokensCached += cachedTok;
+            const cost = estimateCost(result.usage, modelSelect.value);
+            costTotal += cost;
+            appendMeta(loading.wrap, inTok, outTok, reasoningTok, cachedTok, cost);
+            prevRagPromptTokens = inTok;
+            prevRagCompletionTokens = Math.max(0, outTok);
+          }
+          chatEl.scrollTop = chatEl.scrollHeight;
+        } catch (err) {
+          loading.wrap.remove();
+          addMessage("error", err.message || String(err));
+          if (newUserMessage) ragHistory.pop();
+        } finally {
+          sendBtn.disabled = false;
+          refreshToolbar();
+          input.focus();
+        }
+      }
+
       async function sendCompareCompletion({ userText }) {
         sendBtn.disabled = true;
         refreshToolbar();
@@ -1926,7 +2135,7 @@ Short description: Understand the force behind exponential changes.`;
           <div class="hero" id="placeholder">
             <h1 class="hero-title">Xenophon</h1>
             <p class="hero-tagline">Dilemma distiller, conundrum concluder, reflection reliever</p>
-            <p class="hero-hint">Run the same prompt through Standard and Supabase-backed RAG, then inspect the retrieved source chunks and citations below the RAG answer.</p>
+            <p class="hero-hint">Run Standard, RAG, or the Agent pipeline mode, then inspect the retrieved chunks, citations, and the visible pipeline trace below the answer.</p>
           </div>
         `;
       }
@@ -2118,6 +2327,7 @@ Short description: Understand the force behind exponential changes.`;
         max_tokens,
         match_count,
         match_threshold,
+        pipeline_mode = "rag",
       }) {
         const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/functions/v1/rag-chat`, {
           method: "POST",
@@ -2135,6 +2345,7 @@ Short description: Understand the force behind exponential changes.`;
             max_tokens,
             match_count,
             match_threshold,
+            pipeline_mode,
           }),
         });
         const body = await response.json().catch(() => ({}));
@@ -2366,6 +2577,123 @@ Short description: Understand the force behind exponential changes.`;
       function appendRetrievedContext(wrap, sources) {
         const context = buildRetrievedContext(sources);
         if (context) wrap.appendChild(context);
+      }
+
+      function appendPipelineTrace(wrap, trace) {
+        const panel = buildPipelineTrace(trace);
+        if (panel) wrap.appendChild(panel);
+      }
+
+      function buildPipelineTrace(trace) {
+        if (!trace || !Array.isArray(trace.steps) || !trace.steps.length) return null;
+
+        const panel = document.createElement("section");
+        panel.className = "pipeline-trace";
+
+        const head = document.createElement("div");
+        head.className = "pipeline-trace-head";
+
+        const title = document.createElement("div");
+        title.className = "pipeline-trace-title";
+        title.textContent = "Pipeline trace";
+        head.appendChild(title);
+
+        const badge = document.createElement("span");
+        badge.className = `pipeline-badge ${trace.badge_tone === "grounded" ? "grounded" : "weak"}`;
+        badge.textContent = trace.badge || "Weak evidence";
+        head.appendChild(badge);
+        panel.appendChild(head);
+
+        const summary = document.createElement("div");
+        summary.className = "pipeline-summary";
+        summary.appendChild(buildPipelineStat("Chunks found", String(trace.retrieved_count ?? 0)));
+        summary.appendChild(buildPipelineStat("Queries used", String(Array.isArray(trace.rewritten_queries) ? trace.rewritten_queries.length : 0)));
+        summary.appendChild(buildPipelineStat("Final sources", String(Array.isArray(trace.used_sources) ? trace.used_sources.length : 0)));
+        panel.appendChild(summary);
+
+        const steps = document.createElement("div");
+        steps.className = "pipeline-steps";
+
+        for (const step of trace.steps) {
+          const item = document.createElement("section");
+          item.className = "pipeline-step";
+
+          const itemHead = document.createElement("div");
+          itemHead.className = "pipeline-step-head";
+
+          const label = document.createElement("div");
+          label.className = "pipeline-step-label";
+          label.textContent = step.label;
+
+          const status = document.createElement("span");
+          const normalizedStatus = String(step.status || "skipped").replace(/_/g, "-");
+          status.className = `pipeline-step-status ${normalizedStatus}`;
+          status.textContent = String(step.status || "skipped");
+
+          itemHead.append(label, status);
+          item.appendChild(itemHead);
+
+          const stepSummary = document.createElement("div");
+          stepSummary.className = "pipeline-step-summary";
+          stepSummary.textContent = step.summary || "";
+          item.appendChild(stepSummary);
+
+          const items = buildStepItems(step.id, trace);
+          if (items.length) {
+            const list = document.createElement("ul");
+            list.className = "pipeline-step-list";
+            for (const text of items) {
+              const li = document.createElement("li");
+              li.textContent = text;
+              list.appendChild(li);
+            }
+            item.appendChild(list);
+          }
+
+          steps.appendChild(item);
+        }
+
+        panel.appendChild(steps);
+        return panel;
+      }
+
+      function buildPipelineStat(label, value) {
+        const stat = document.createElement("div");
+        stat.className = "pipeline-stat";
+
+        const statLabel = document.createElement("span");
+        statLabel.className = "pipeline-stat-label";
+        statLabel.textContent = label;
+
+        const statValue = document.createElement("span");
+        statValue.className = "pipeline-stat-value";
+        statValue.textContent = value;
+
+        stat.append(statLabel, statValue);
+        return stat;
+      }
+
+      function buildStepItems(stepId, trace) {
+        if (stepId === "query_rewrite") {
+          return Array.isArray(trace.rewritten_queries) ? trace.rewritten_queries : [];
+        }
+        if (stepId === "retrieve") {
+          return Array.isArray(trace.used_sources) && trace.used_sources.length
+            ? trace.used_sources
+            : ["No source citations were used in the final answer."];
+        }
+        if (stepId === "verify") {
+          const items = [];
+          const verification = trace.verification || {};
+          for (const claim of Array.isArray(verification.supported_claims) ? verification.supported_claims : []) {
+            items.push(`Supported: ${claim}`);
+          }
+          for (const claim of Array.isArray(verification.unsupported_claims) ? verification.unsupported_claims : []) {
+            items.push(`Needs caution: ${claim}`);
+          }
+          return items.slice(0, 4);
+        }
+        return [];
       }
 
       function appendUserMeta(wrap, tokens, isFirstTurn) {
