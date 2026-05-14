@@ -31,9 +31,11 @@ type UsageShape = {
 };
 
 type PlannerResult = {
+  action: "answer_now" | "ask_clarifying_question";
   intent: string;
   retrieval_goal: string;
   rewritten_queries: string[];
+  clarifying_question: string | null;
   used_fallback: boolean;
 };
 
@@ -51,6 +53,8 @@ type TraceStep = {
   status: "done" | "skipped" | "low_confidence";
   summary: string;
 };
+
+type NormalizedSource = ReturnType<typeof normalizeSource>;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -159,9 +163,11 @@ function parsePlannerResult(rawText: string, fallbackQuery: string): PlannerResu
   const parsed = parseJsonObject(rawText);
   if (!parsed) {
     return {
+      action: "answer_now",
       intent: "Could not parse planner output reliably.",
       retrieval_goal: "Fallback to the raw user question for retrieval.",
       rewritten_queries: [fallbackQuery.trim()],
+      clarifying_question: null,
       used_fallback: true,
     };
   }
@@ -173,11 +179,18 @@ function parsePlannerResult(rawText: string, fallbackQuery: string): PlannerResu
   const fallbackNormalized = fallbackQuery.trim();
   const usedFallback = !rawQueries.length ||
     (rewrittenQueries.length === 1 && rewrittenQueries[0] === fallbackNormalized);
+  const requestedAction = String(parsed.action ?? "").trim();
+  const clarifyingQuestion = String(parsed.clarifying_question ?? "").trim();
+  const action = requestedAction === "ask_clarifying_question" && clarifyingQuestion
+    ? "ask_clarifying_question"
+    : "answer_now";
 
   return {
+    action,
     intent: String(parsed.intent ?? "Clarify the user's request before retrieval.").trim(),
     retrieval_goal: String(parsed.retrieval_goal ?? "Retrieve evidence that directly answers the user's question.").trim(),
     rewritten_queries: rewrittenQueries,
+    clarifying_question: action === "ask_clarifying_question" ? clarifyingQuestion : null,
     used_fallback: usedFallback,
   };
 }
@@ -245,6 +258,62 @@ function sumUsage(usages: Array<UsageShape | null | undefined>): UsageShape | nu
     prompt_tokens_details: { cached_tokens: cachedTokens },
     completion_tokens_details: { reasoning_tokens: reasoningTokens },
   };
+}
+
+function buildRetrievalInstructions({
+  matches,
+  isAgentPipeline,
+  planner,
+  queriesUsed,
+}: {
+  matches: MatchRow[];
+  isAgentPipeline: boolean;
+  planner: PlannerResult;
+  queriesUsed: string[];
+}) {
+  if (matches.length) {
+    return [
+      isAgentPipeline ? "You are the answer step in an agentic retrieval pipeline." : "",
+      "Use the retrieved context as high-priority evidence.",
+      "Prefer the retrieved context when it conflicts with your background knowledge.",
+      "Cite factual claims with bracketed source references like [1] or [2].",
+      "If the retrieved context does not support an answer, say so plainly.",
+      isAgentPipeline ? `Planning intent: ${planner.intent}` : "",
+      isAgentPipeline ? `Retrieval goal: ${planner.retrieval_goal}` : "",
+      isAgentPipeline ? `Queries used: ${queriesUsed.join(" | ")}` : "",
+      "",
+      "# Retrieved context",
+      buildContext(matches),
+    ].filter(Boolean).join("\n");
+  }
+
+  return [
+    isAgentPipeline ? "You are the answer step in an agentic retrieval pipeline." : "",
+    "No matching retrieval context was found.",
+    "Answer carefully and say that no supporting sources were retrieved.",
+    isAgentPipeline ? `Planning intent: ${planner.intent}` : "",
+  ].filter(Boolean).join("\n");
+}
+
+function buildRetryQueries({
+  userMessage,
+  planner,
+  verification,
+}: {
+  userMessage: string;
+  planner: PlannerResult;
+  verification: VerificationResult;
+}) {
+  const unsupported = Array.isArray(verification.unsupported_claims)
+    ? verification.unsupported_claims
+    : [];
+
+  return uniqueQueries([
+    ...unsupported,
+    userMessage,
+    planner.retrieval_goal,
+    ...planner.rewritten_queries,
+  ], userMessage);
 }
 
 async function callOpenRouterChat({
@@ -392,9 +461,11 @@ Deno.serve(async (req) => {
     if (!messages.length || !userMessage) return json({ error: "Missing chat messages" }, 400);
 
     let planner = {
+      action: "answer_now",
       intent: "Direct retrieval from the latest user question.",
       retrieval_goal: "Retrieve evidence relevant to the latest user question.",
       rewritten_queries: [userMessage],
+      clarifying_question: null,
       used_fallback: true,
     } satisfies PlannerResult;
     const traceSteps: TraceStep[] = [];
@@ -415,8 +486,11 @@ Deno.serve(async (req) => {
               role: "system",
               content: [
                 "You are the planning step in a retrieval agent.",
-                "Return strict JSON with keys: intent, retrieval_goal, rewritten_queries.",
-                "rewritten_queries must be an array of 2 or 3 short search queries.",
+                "Return strict JSON with keys: action, intent, retrieval_goal, rewritten_queries, clarifying_question.",
+                "action must be answer_now or ask_clarifying_question.",
+                "Choose ask_clarifying_question only when the user's request is too vague to answer responsibly.",
+                "If action is ask_clarifying_question, provide exactly one short clarifying_question and keep rewritten_queries minimal.",
+                "If action is answer_now, rewritten_queries must be an array of 2 or 3 short search queries and clarifying_question must be empty.",
                 "Focus on terms that will help semantic retrieval find grounded evidence.",
                 "Do not add markdown fences or commentary.",
               ].join("\n"),
@@ -443,9 +517,11 @@ Deno.serve(async (req) => {
         planner = parsePlannerResult(plannerResult.reply, userMessage);
       } catch {
         planner = {
+          action: "answer_now",
           intent: "Planner call failed; fallback to direct retrieval.",
           retrieval_goal: "Retrieve evidence for the raw user question only.",
           rewritten_queries: [userMessage],
+          clarifying_question: null,
           used_fallback: true,
         };
       }
@@ -463,6 +539,51 @@ Deno.serve(async (req) => {
         summary: planner.used_fallback
           ? "Planner fallback used the raw question as the only retrieval query."
           : `${planner.rewritten_queries.length} retrieval queries prepared.`,
+      });
+    }
+
+    if (isAgentPipeline && planner.action === "ask_clarifying_question" && planner.clarifying_question) {
+      traceSteps.push({
+        id: "retrieve",
+        label: "Retrieve",
+        status: "skipped",
+        summary: "Retrieval skipped until the user clarifies the request.",
+      });
+      traceSteps.push({
+        id: "answer",
+        label: "Answer",
+        status: "done",
+        summary: "The agent returned a clarifying question instead of a grounded answer.",
+      });
+      traceSteps.push({
+        id: "verify",
+        label: "Verify",
+        status: "skipped",
+        summary: "Verification skipped because no factual answer was produced yet.",
+      });
+
+      return json({
+        reply: planner.clarifying_question,
+        usage: sumUsage(usageParts),
+        finish_reason: "clarification_requested",
+        model_snapshot: model,
+        id: null,
+        sources: [],
+        retrieved_count: 0,
+        trace: {
+          badge: "Needs clarification",
+          badge_tone: "weak",
+          decision: "clarify",
+          intent: planner.intent,
+          retrieval_goal: planner.retrieval_goal,
+          clarifying_question: planner.clarifying_question,
+          retrieved_count: 0,
+          rewritten_queries: planner.rewritten_queries,
+          used_sources: [],
+          retry_queries: [],
+          steps: traceSteps,
+          verification: null,
+        },
       });
     }
 
@@ -485,26 +606,12 @@ Deno.serve(async (req) => {
     }
 
     const ragMessages = messages.slice(0, -1);
-    const retrievalInstructions = matches.length
-      ? [
-          isAgentPipeline ? "You are the answer step in an agentic retrieval pipeline." : "",
-          "Use the retrieved context as high-priority evidence.",
-          "Prefer the retrieved context when it conflicts with your background knowledge.",
-          "Cite factual claims with bracketed source references like [1] or [2].",
-          "If the retrieved context does not support an answer, say so plainly.",
-          isAgentPipeline ? `Planning intent: ${planner.intent}` : "",
-          isAgentPipeline ? `Retrieval goal: ${planner.retrieval_goal}` : "",
-          isAgentPipeline ? `Queries used: ${planner.rewritten_queries.join(" | ")}` : "",
-          "",
-          "# Retrieved context",
-          buildContext(matches),
-        ].filter(Boolean).join("\n")
-      : [
-          isAgentPipeline ? "You are the answer step in an agentic retrieval pipeline." : "",
-          "No matching retrieval context was found.",
-          "Answer carefully and say that no supporting sources were retrieved.",
-          isAgentPipeline ? `Planning intent: ${planner.intent}` : "",
-        ].filter(Boolean).join("\n");
+    const retrievalInstructions = buildRetrievalInstructions({
+      matches,
+      isAgentPipeline,
+      planner,
+      queriesUsed: planner.rewritten_queries,
+    });
 
     ragMessages.push({ role: "system", content: retrievalInstructions });
     ragMessages.push(messages[messages.length - 1]);
@@ -523,26 +630,22 @@ Deno.serve(async (req) => {
 
     let trace = null;
     if (isAgentPipeline) {
-      const usedSources = extractUsedSourceCitations(answerResult.reply, sources);
-      const hasCitations = usedSources.length > 0;
-      traceSteps.push({
-        id: "answer",
-        label: "Answer",
-        status: "done",
-        summary: hasCitations
-          ? `Answer generated with ${usedSources.length} cited source reference(s).`
-          : "Answer generated without explicit source citations.",
-      });
+      const verifyAnswer = async (reply: string, answerSources: NormalizedSource[]) => {
+        const usedSourceCitations = extractUsedSourceCitations(reply, answerSources);
+        const hasCitations = usedSourceCitations.length > 0;
 
-      let verification: VerificationResult;
-      if (!sources.length) {
-        verification = {
-          status: "weak_evidence",
-          supported_claims: [],
-          unsupported_claims: ["No retrieved chunks were available to support the answer."],
-          note: "No retrieval evidence was available, so the answer should be treated cautiously.",
-        };
-      } else {
+        if (!answerSources.length) {
+          return {
+            usedSourceCitations,
+            verification: {
+              status: "weak_evidence",
+              supported_claims: [],
+              unsupported_claims: ["No retrieved chunks were available to support the answer."],
+              note: "No retrieval evidence was available, so the answer should be treated cautiously.",
+            } satisfies VerificationResult,
+          };
+        }
+
         try {
           const verifyResult = await callOpenRouterChat({
             openrouterApiKey,
@@ -568,10 +671,10 @@ Deno.serve(async (req) => {
                 role: "user",
                 content: [
                   "# Answer to verify",
-                  answerResult.reply,
+                  reply,
                   "",
                   "# Retrieved sources",
-                  sources
+                  answerSources
                     .map((source) => `${source.citation}\n${source.excerpt}`)
                     .join("\n\n"),
                 ].join("\n"),
@@ -579,17 +682,105 @@ Deno.serve(async (req) => {
             ],
           });
           usageParts.push(verifyResult.usage);
-          verification = parseVerificationResult(verifyResult.reply, sources.length > 0, hasCitations);
+          return {
+            usedSourceCitations,
+            verification: parseVerificationResult(verifyResult.reply, answerSources.length > 0, hasCitations),
+          };
         } catch {
-          verification = {
-            status: hasCitations ? "grounded" : "weak_evidence",
-            supported_claims: hasCitations ? ["The answer contains explicit citations to retrieved sources."] : [],
-            unsupported_claims: hasCitations ? [] : ["The verifier step failed and the answer has no explicit citations."],
-            note: "Verifier call failed; using a citation-based fallback.",
-            parse_failed: true,
+          return {
+            usedSourceCitations,
+            verification: {
+              status: hasCitations ? "grounded" : "weak_evidence",
+              supported_claims: hasCitations ? ["The answer contains explicit citations to retrieved sources."] : [],
+              unsupported_claims: hasCitations ? [] : ["The verifier step failed and the answer has no explicit citations."],
+              note: "Verifier call failed; using a citation-based fallback.",
+              parse_failed: true,
+            } satisfies VerificationResult,
           };
         }
+      };
+
+      let finalAnswerResult = answerResult;
+      let finalSources = sources;
+      let { usedSourceCitations: usedSources, verification } = await verifyAnswer(answerResult.reply, sources);
+      let retryQueries: string[] = [];
+      let retried = false;
+
+      if (verification.status === "weak_evidence") {
+        retryQueries = buildRetryQueries({
+          userMessage,
+          planner,
+          verification,
+        });
+
+        const retryMatchThreshold = Math.max(0.3, matchThreshold - 0.1);
+        const retryMatchCount = Math.min(Math.max(matchCount + 2, matchCount), 8);
+        const retryMatches = await retrieveMatchesForQueries({
+          supabase,
+          queries: retryQueries,
+          matchCount: retryMatchCount,
+          matchThreshold: retryMatchThreshold,
+        });
+        const retrySources = retryMatches.map((row, idx) => normalizeSource(row, idx + 1));
+        retried = true;
+
+        if (retrySources.length) {
+          const retryMessages = messages.slice(0, -1);
+          retryMessages.push({
+            role: "system",
+            content: buildRetrievalInstructions({
+              matches: retryMatches,
+              isAgentPipeline: true,
+              planner,
+              queriesUsed: retryQueries,
+            }),
+          });
+          retryMessages.push(messages[messages.length - 1]);
+
+          const retryAnswerResult = await callOpenRouterChat({
+            openrouterApiKey,
+            model,
+            messages: retryMessages,
+            temperature,
+            topP,
+            maxTokens,
+            referer,
+            title: "Xenophon Agent Answer Retry",
+          });
+          usageParts.push(retryAnswerResult.usage);
+
+          finalAnswerResult = retryAnswerResult;
+          finalSources = retrySources;
+          ({ usedSourceCitations: usedSources, verification } = await verifyAnswer(retryAnswerResult.reply, retrySources));
+        }
+
+        traceSteps.push({
+          id: "retrieve_retry",
+          label: "Retrieve retry",
+          status: retrySources.length
+            ? "done"
+            : "low_confidence",
+          summary: retrySources.length
+            ? `Retry broadened retrieval with ${retryQueries.length} fallback query path(s) and found ${retrySources.length} chunk(s).`
+            : "Retry broadened retrieval, but still did not find stronger evidence.",
+        });
+      } else {
+        traceSteps.push({
+          id: "retrieve_retry",
+          label: "Retrieve retry",
+          status: "skipped",
+          summary: "Retry was unnecessary because the first pass was grounded enough.",
+        });
       }
+
+      traceSteps.push({
+        id: "answer",
+        label: "Answer",
+        status: "done",
+        summary: usedSources.length
+          ? `Answer generated with ${usedSources.length} cited source reference(s)${retried ? " after retry" : ""}.`
+          : `Answer generated without explicit source citations${retried ? " even after retry" : ""}.`,
+      });
 
       traceSteps.push({
         id: "verify",
@@ -605,12 +796,28 @@ Deno.serve(async (req) => {
       trace = {
         badge: verification.status === "grounded" ? "Grounded" : "Weak evidence",
         badge_tone: verification.status === "grounded" ? "grounded" : "weak",
-        retrieved_count: sources.length,
+        decision: "answer",
+        intent: planner.intent,
+        retrieval_goal: planner.retrieval_goal,
+        clarifying_question: null,
+        retrieved_count: finalSources.length,
         rewritten_queries: planner.rewritten_queries,
         used_sources: usedSources,
+        retry_queries: retryQueries,
         steps: traceSteps,
         verification,
       };
+
+      return json({
+        reply: finalAnswerResult.reply,
+        usage: sumUsage(usageParts),
+        finish_reason: finalAnswerResult.finish_reason ?? null,
+        model_snapshot: finalAnswerResult.model_snapshot ?? model,
+        id: finalAnswerResult.id ?? null,
+        sources: finalSources,
+        retrieved_count: finalSources.length,
+        trace,
+      });
     }
 
     return json({

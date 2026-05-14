@@ -1003,6 +1003,8 @@ RAG sends the same conversation to a Supabase Edge Function, retrieves matching 
 
 Agent adds a lightweight pipeline: plan the question, rewrite retrieval queries, retrieve evidence, answer with citations, then verify how well grounded the answer is.
 
+If the request is too vague, Agent asks one clarifying question first. If evidence comes back weak, Agent retries retrieval with broader fallback queries.
+
 Compare runs both paths side by side and exposes the retrieved chunks below the RAG answer." aria-label="About RAG">?</button>
         </div>
 
@@ -1140,7 +1142,7 @@ Preset use cases (temperature · top-p):
         <div class="hero" id="placeholder">
           <h1 class="hero-title">Xenophon</h1>
           <p class="hero-tagline">Dilemma distiller, conundrum concluder, reflection reliever</p>
-          <p class="hero-hint">Run Standard, RAG, or the Agent pipeline mode, then inspect the retrieved chunks, citations, and visible pipeline trace below the answer.</p>
+          <p class="hero-hint">Run Standard, RAG, or Agent mode, then inspect the pipeline trace. Agent can ask a clarifying follow-up first and retry retrieval when the first evidence pass is weak.</p>
         </div>
       </main>
 
@@ -2135,7 +2137,7 @@ Short description: Understand the force behind exponential changes.`;
           <div class="hero" id="placeholder">
             <h1 class="hero-title">Xenophon</h1>
             <p class="hero-tagline">Dilemma distiller, conundrum concluder, reflection reliever</p>
-            <p class="hero-hint">Run Standard, RAG, or the Agent pipeline mode, then inspect the retrieved chunks, citations, and the visible pipeline trace below the answer.</p>
+            <p class="hero-hint">Run Standard, RAG, or Agent mode, then inspect the pipeline trace. Agent can ask a clarifying follow-up first and retry retrieval when the first evidence pass is weak.</p>
           </div>
         `;
       }
@@ -2606,8 +2608,10 @@ Short description: Understand the force behind exponential changes.`;
 
         const summary = document.createElement("div");
         summary.className = "pipeline-summary";
+        summary.appendChild(buildPipelineStat("Decision", String(trace.decision || "answer")));
         summary.appendChild(buildPipelineStat("Chunks found", String(trace.retrieved_count ?? 0)));
         summary.appendChild(buildPipelineStat("Queries used", String(Array.isArray(trace.rewritten_queries) ? trace.rewritten_queries.length : 0)));
+        summary.appendChild(buildPipelineStat("Retry queries", String(Array.isArray(trace.retry_queries) ? trace.retry_queries.length : 0)));
         summary.appendChild(buildPipelineStat("Final sources", String(Array.isArray(trace.used_sources) ? trace.used_sources.length : 0)));
         panel.appendChild(summary);
 
@@ -2674,6 +2678,14 @@ Short description: Understand the force behind exponential changes.`;
       }
 
       function buildStepItems(stepId, trace) {
+        if (stepId === "plan") {
+          const items = [];
+          if (trace.decision) items.push(`Decision: ${trace.decision}`);
+          if (trace.intent) items.push(`Intent: ${trace.intent}`);
+          if (trace.retrieval_goal) items.push(`Retrieval goal: ${trace.retrieval_goal}`);
+          if (trace.clarifying_question) items.push(`Clarifying question: ${trace.clarifying_question}`);
+          return items;
+        }
         if (stepId === "query_rewrite") {
           return Array.isArray(trace.rewritten_queries) ? trace.rewritten_queries : [];
         }
@@ -2681,6 +2693,11 @@ Short description: Understand the force behind exponential changes.`;
           return Array.isArray(trace.used_sources) && trace.used_sources.length
             ? trace.used_sources
             : ["No source citations were used in the final answer."];
+        }
+        if (stepId === "retrieve_retry") {
+          return Array.isArray(trace.retry_queries) && trace.retry_queries.length
+            ? trace.retry_queries
+            : ["No retry pass was needed."];
         }
         if (stepId === "verify") {
           const items = [];
