@@ -63,3 +63,7 @@ Runtime dependencies in the browser are still loaded from CDNs:
 - Added a grounding verification step and a visible `Pipeline trace` panel under agent replies.
 - Added automatic retrieval retry with broader fallback queries when the first evidence pass is weak.
 - Added planner rationale preview in the UI, including decision, intent, and retrieval goal.
+
+## v1.2.1
+
+- Improved PDF ingestion quality by detecting corrupted embedded text and falling back to OCR for affected pages before chunking and embedding.
