@@ -25,7 +25,7 @@ The `Agent` mode exposes a visible `Pipeline trace` beneath the reply, including
 Repository structure:
 
 - `index.html` - complete static app.
-- `scripts/ingest_supabase_rag.py` - extracts local PDFs and uploads chunk batches to Supabase for embedding and storage.
+- `scripts/ingest_supabase_rag.py` - extracts local PDFs and uploads chunk batches to Supabase for embedding and storage, with automatic OCR fallback for pages whose embedded PDF text is corrupted.
 - `scripts/cleanup_supabase_documents.py` - removes test or temporary documents from the Supabase RAG store.
 - `supabase/migrations/20260508_add_rag.sql` - schema, pgvector index, and retrieval RPC.
 - `supabase/functions/rag-chat/index.ts` - retrieval + OpenRouter orchestration, including the agentic pipeline.
