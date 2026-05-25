@@ -3,6 +3,7 @@
 .vscode/
 .idea/
 node_modules/
+mcp/xenophon-mcp/dist/
 *.log
 .env
 .env.local

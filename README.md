@@ -29,14 +29,78 @@ Repository structure:
 - `scripts/cleanup_supabase_documents.py` - removes test or temporary documents from the Supabase RAG store.
 - `supabase/migrations/20260508_add_rag.sql` - schema, pgvector index, and retrieval RPC.
 - `supabase/functions/rag-chat/index.ts` - retrieval + OpenRouter orchestration, including the agentic pipeline.
+- `supabase/functions/search-knowledge/index.ts` - semantic retrieval endpoint for MCP and other non-UI clients.
+- `supabase/functions/list-documents/index.ts` - document listing endpoint for MCP and admin-style inspection.
 - `supabase/functions/ingest-chunks/index.ts` - protected ingestion endpoint that embeds and stores uploaded chunks.
 - `supabase/functions/cleanup-documents/index.ts` - protected cleanup endpoint for deleting test or temporary documents.
 - `supabase/functions/_shared/cors.ts` - shared CORS headers for browser-safe invocation.
+- `mcp/xenophon-mcp/` - local `stdio` MCP server exposing Xenophon as MCP tools.
 
 Runtime dependencies in the browser are still loaded from CDNs:
 
 - `marked` for markdown parsing.
 - `DOMPurify` for sanitizing rendered assistant markdown.
+
+## MCP Server
+
+The repository now also includes a local MCP server scaffold in `mcp/xenophon-mcp/`. It exposes the existing Xenophon backend as MCP tools over `stdio`:
+
+- `ask_xenophon` - query the existing `rag-chat` flow in `rag` or `agent` mode.
+- `search_knowledge` - run semantic search over the indexed Supabase chunks.
+- `list_documents` - inspect the current knowledge-base documents.
+
+Supporting Supabase Edge Functions:
+
+- `supabase/functions/search-knowledge/index.ts` - semantic retrieval endpoint used by MCP.
+- `supabase/functions/list-documents/index.ts` - document listing endpoint used by MCP.
+
+Architecture summary:
+
+- MCP host talks to the local `stdio` server in `mcp/xenophon-mcp/`.
+- `ask_xenophon` forwards requests to the existing `rag-chat` Supabase Edge Function.
+- `search_knowledge` and `list_documents` expose retrieval and document inspection as separate MCP tools.
+- The MCP layer wraps the existing backend instead of duplicating the RAG logic.
+
+Quick start:
+
+```bash
+cd mcp/xenophon-mcp
+npm install
+npm run build
+```
+
+Minimal host configuration:
+
+```json
+{
+  "mcpServers": {
+    "xenophon": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/lmt-chatbot/mcp/xenophon-mcp/dist/index.js"
+      ],
+      "env": {
+        "SUPABASE_URL": "https://sjhznnsniowvchsnicno.supabase.co",
+        "SUPABASE_ANON_KEY": "sb_publishable_your_key_here",
+        "OPENROUTER_API_KEY": "sk-or-v1-your_key_here",
+        "XENOPHON_DEFAULT_MODEL": "google/gemini-2.5-flash"
+      }
+    }
+  }
+}
+```
+
+Suggested demo flow:
+
+1. Show that the MCP host detects the `xenophon` server and its tools.
+2. Run `list_documents` to show the knowledge base contents.
+3. Run `search_knowledge` with a query that exists in the indexed documents, for example `attention matrix`.
+4. Run `ask_xenophon` in `rag` mode to show the full MCP -> Supabase -> OpenRouter path.
+
+Related files:
+
+- [mcp/xenophon-mcp/README.md](/Users/piotrobiegly/Documents/GitHub/lmt-chatbot/mcp/xenophon-mcp/README.md:1) - MCP package setup and config.
+- [mcp/xenophon-mcp/mcp-server.example.json](/Users/piotrobiegly/Documents/GitHub/lmt-chatbot/mcp/xenophon-mcp/mcp-server.example.json:1) - copyable host config example.
 
 # Change Log
 
