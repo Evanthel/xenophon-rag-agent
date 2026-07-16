@@ -22,7 +22,14 @@ import {
   extractUsedSourceCitations,
   parseVerificationResult,
 } from "./verification.ts";
-import type { NormalizedSource, PlannerResult, TraceStep, UsageShape, VerificationResult } from "./types.ts";
+import type {
+  NormalizedSource,
+  PlannerResult,
+  TraceStep,
+  UsageShape,
+  VerificationResult,
+  XenophonDatabase,
+} from "./types.ts";
 
 const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 30 });
 
@@ -88,17 +95,15 @@ async function verifyAnswer({
     return {
       usedSourceCitations,
       usage: verifyResult.usage,
-      verification: citationCheck.pass
-        ? verification
-        : {
-          ...verification,
-          status: "weak_evidence",
-          unsupported_claims: [
-            citationIssueNote(citationCheck),
-            ...verification.unsupported_claims,
-          ].slice(0, 4),
-          note: citationIssueNote(citationCheck),
-        },
+      verification: citationCheck.pass ? verification : {
+        ...verification,
+        status: "weak_evidence",
+        unsupported_claims: [
+          citationIssueNote(citationCheck),
+          ...verification.unsupported_claims,
+        ].slice(0, 4),
+        note: citationIssueNote(citationCheck),
+      },
     };
   } catch {
     return {
@@ -166,7 +171,7 @@ Deno.serve(async (req) => {
       return json({ error: "Supabase storage is not configured" }, 500);
     }
 
-    const supabase = createClient(
+    const supabase = createClient<XenophonDatabase>(
       supabaseUrl,
       serviceRoleKey,
       { auth: { persistSession: false } },
@@ -456,11 +461,7 @@ Deno.serve(async (req) => {
       traceSteps.push({
         id: "verify",
         label: "Verify",
-        status: verification.status === "grounded"
-          ? "done"
-          : verification.parse_failed
-            ? "skipped"
-            : "low_confidence",
+        status: verification.status === "grounded" ? "done" : verification.parse_failed ? "skipped" : "low_confidence",
         summary: verification.note,
       });
 

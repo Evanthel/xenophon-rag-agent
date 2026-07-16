@@ -1,6 +1,6 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { uniqueQueries } from "./planner.ts";
-import type { MatchRow } from "./types.ts";
+import type { MatchRow, XenophonDatabase } from "./types.ts";
 
 const embeddingSession = new Supabase.ai.Session("gte-small");
 
@@ -10,7 +10,7 @@ export async function retrieveMatchesForQueries({
   matchCount,
   matchThreshold,
 }: {
-  supabase: ReturnType<typeof createClient>;
+  supabase: SupabaseClient<XenophonDatabase>;
   queries: string[];
   matchCount: number;
   matchThreshold: number;

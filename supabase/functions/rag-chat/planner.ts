@@ -31,7 +31,10 @@ export function uniqueQueries(queries: string[], fallback: string) {
   return Array.from(deduped).slice(0, 3);
 }
 
-export function defaultPlanner(userMessage: string, intent = "Direct retrieval from the latest user question."): PlannerResult {
+export function defaultPlanner(
+  userMessage: string,
+  intent = "Direct retrieval from the latest user question.",
+): PlannerResult {
   return {
     action: "answer_now",
     intent,
@@ -71,7 +74,8 @@ export function parsePlannerResult(rawText: string, fallbackQuery: string): Plan
   return {
     action,
     intent: String(parsed.intent ?? "Clarify the user's request before retrieval.").trim(),
-    retrieval_goal: String(parsed.retrieval_goal ?? "Retrieve evidence that directly answers the user's question.").trim(),
+    retrieval_goal: String(parsed.retrieval_goal ?? "Retrieve evidence that directly answers the user's question.")
+      .trim(),
     rewritten_queries: rewrittenQueries,
     clarifying_question: action === "ask_clarifying_question" ? clarifyingQuestion : null,
     used_fallback: usedFallback,

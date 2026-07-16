@@ -1,4 +1,5 @@
 {
+  "nodeModulesDir": "auto",
   "compilerOptions": {
     "lib": ["deno.ns", "dom", "dom.iterable"],
     "types": ["./supabase/functions/_shared/supabase-edge.d.ts"]

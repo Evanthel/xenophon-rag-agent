@@ -1,12 +1,18 @@
 import { parseJsonObject, uniqueQueries } from "./planner.ts";
 import type { ChatMessage, NormalizedSource, PlannerResult, VerificationResult } from "./types.ts";
 
-export function parseVerificationResult(rawText: string, hasSources: boolean, hasCitations: boolean): VerificationResult {
+export function parseVerificationResult(
+  rawText: string,
+  hasSources: boolean,
+  hasCitations: boolean,
+): VerificationResult {
   const parsed = parseJsonObject(rawText);
   if (!parsed) {
     return {
       status: hasSources && hasCitations ? "grounded" : "weak_evidence",
-      supported_claims: hasSources && hasCitations ? ["The answer references retrieved sources with inline citations."] : [],
+      supported_claims: hasSources && hasCitations
+        ? ["The answer references retrieved sources with inline citations."]
+        : [],
       unsupported_claims: hasSources || hasCitations ? [] : ["The answer does not provide strong evidence grounding."],
       note: "Verifier output could not be parsed; using a heuristic fallback.",
       parse_failed: true,
@@ -25,9 +31,10 @@ export function parseVerificationResult(rawText: string, hasSources: boolean, ha
     status,
     supported_claims: supportedClaims,
     unsupported_claims: unsupportedClaims,
-    note: String(parsed.note ?? "").trim() || (status === "grounded"
-      ? "Most core claims appear supported by retrieved evidence."
-      : "Some claims are unsupported, missing citations, or weakly grounded."),
+    note: String(parsed.note ?? "").trim() ||
+      (status === "grounded"
+        ? "Most core claims appear supported by retrieved evidence."
+        : "Some claims are unsupported, missing citations, or weakly grounded."),
   };
 }
 
@@ -81,9 +88,7 @@ export function buildRetryQueries({
   planner: PlannerResult;
   verification: VerificationResult;
 }) {
-  const unsupported = Array.isArray(verification.unsupported_claims)
-    ? verification.unsupported_claims
-    : [];
+  const unsupported = Array.isArray(verification.unsupported_claims) ? verification.unsupported_claims : [];
 
   return uniqueQueries([
     ...unsupported,

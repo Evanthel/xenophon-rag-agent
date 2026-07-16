@@ -14,6 +14,25 @@ export type MatchRow = {
   similarity: number;
 };
 
+export type XenophonDatabase = {
+  public: {
+    Tables: Record<string, never>;
+    Views: Record<string, never>;
+    Functions: {
+      match_document_chunks: {
+        Args: {
+          query_embedding: number[];
+          match_count: number;
+          match_threshold: number;
+        };
+        Returns: MatchRow[];
+      };
+    };
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
+  };
+};
+
 export type UsageShape = {
   prompt_tokens?: number;
   total_tokens?: number;

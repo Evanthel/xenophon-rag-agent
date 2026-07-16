@@ -24,9 +24,7 @@ export function normalizeSource(row: MatchRow, index: number): NormalizedSource 
   const pageStart = Number(row.metadata?.page_start ?? 0);
   const pageEnd = Number(row.metadata?.page_end ?? 0);
   const pageLabel = pageStart > 0 && pageEnd > 0
-    ? pageStart === pageEnd
-      ? `p. ${pageStart}`
-      : `pp. ${pageStart}-${pageEnd}`
+    ? pageStart === pageEnd ? `p. ${pageStart}` : `pp. ${pageStart}-${pageEnd}`
     : null;
 
   return {
