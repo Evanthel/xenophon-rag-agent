@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+
+  repo-hygiene:
+    name: Repo hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Block local filesystem paths in documentation
+        run: |
+          if grep -RInE '(/Users/|file://|/home/|C:[\\/]Users[\\/])' README.md CHANGELOG.md package.json docs/portfolio mcp/xenophon-mcp/README.md; then
+            echo "Local filesystem path found in public documentation."
+            exit 1
+          fi
+
+  mcp:
+    name: MCP npm ci and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp/xenophon-mcp
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mcp/xenophon-mcp/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build MCP server
+        run: npm run build
+
+  deno:
+    name: Supabase Functions Deno checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: lts
+          cache: true
+
+      - name: Check formatting
+        run: deno fmt --check --config deno.json supabase/functions
+
+      - name: Type-check Supabase Functions
+        run: deno check --config deno.json supabase/functions/*/index.ts supabase/functions/rag-chat/*.ts
+
+  typescript-tests:
+    name: TypeScript tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Run tests
+        run: npm test
+
+  python-smoke:
+    name: Python smoke checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install lightweight script dependencies
+        run: python -m pip install requests pypdf
+
+      - name: Compile scripts
+        run: python -m py_compile scripts/cleanup_supabase_documents.py scripts/ingest_supabase_rag.py
+
+      - name: Check CLI help
+        run: |
+          python scripts/cleanup_supabase_documents.py --help
+          python scripts/ingest_supabase_rag.py --help

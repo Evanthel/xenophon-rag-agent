@@ -3,6 +3,7 @@
 .vscode/
 .idea/
 node_modules/
+mcp/xenophon-mcp/dist/
 *.log
 .env
 .env.local
@@ -10,3 +11,4 @@ node_modules/
 venv/
 __pycache__/
 /lbdl.pdf
+docs/portfolio/results/latest.*

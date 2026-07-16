@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="920" viewBox="0 0 1440 920" role="img" aria-labelledby="title desc">
+  <title id="title">Xenophon Compare mode preview</title>
+  <desc id="desc">Portfolio preview of Xenophon Compare mode showing a direct answer beside a RAG answer with retrieved context and telemetry.</desc>
+  <rect width="1440" height="920" fill="#f8f4e9"/>
+  <rect x="0" y="0" width="1440" height="64" fill="#f8f4e9" stroke="#e2d5b8"/>
+  <rect x="24" y="14" width="38" height="38" rx="8" fill="none" stroke="#c7ad72"/>
+  <path d="M34 25h18M34 32h18M34 39h18" stroke="#292313" stroke-width="2" stroke-linecap="round"/>
+  <text x="1068" y="38" fill="#292313" font-family="Menlo, monospace" font-size="15">1 msgs · 2,924 tokens in · 710 tokens out · ~$0.0027 total</text>
+
+  <g transform="translate(332 102)">
+    <rect x="0" y="0" width="776" height="62" rx="14" fill="#efe2bd"/>
+    <text x="28" y="38" fill="#292313" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="20">When should I use second-order thinking instead of a decision matrix?</text>
+  </g>
+
+  <g transform="translate(120 208)">
+    <rect x="0" y="0" width="575" height="360" rx="14" fill="#fffdf7" stroke="#c7ad72"/>
+    <text x="26" y="42" fill="#756b55" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="13" font-weight="600" letter-spacing=".08em">NO RAG</text>
+    <text x="26" y="88" fill="#292313" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="23" font-weight="600">Direct model answer</text>
+    <text x="26" y="130" fill="#292313" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="18">Use second-order thinking when the core risk is a</text>
+    <text x="26" y="160" fill="#292313" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="18">delayed consequence. Use a decision matrix when</text>
+    <text x="26" y="190" fill="#292313" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="18">you need to compare options across known criteria.</text>
+    <text x="26" y="246" fill="#756b55" font-family="Menlo, monospace" font-size="14">1,214 tokens in · 298 tokens out · ~$0.0011</text>
+    <rect x="26" y="286" width="70" height="34" rx="17" fill="#efe7d2" stroke="#c7ad72"/>
+    <text x="45" y="308" fill="#292313" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="15">Copy</text>
+  </g>
+
+  <g transform="translate(745 208)">
+    <rect x="0" y="0" width="575" height="360" rx="14" fill="#fffdf7" stroke="#9f7a22" stroke-width="2"/>
+    <text x="26" y="42" fill="#9f7a22" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="13" font-weight="600" letter-spacing=".08em">RAG</text>
+    <text x="26" y="88" fill="#292313" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="23" font-weight="600">Grounded answer with citations</text>
+    <text x="26" y="130" fill="#292313" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="18">Second-order thinking fits choices where outcomes</text>
+    <text x="26" y="160" fill="#292313" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="18">compound over time [1]. A decision matrix is better</text>
+    <text x="26" y="190" fill="#292313" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="18">when options can be scored against stable criteria [2].</text>
+    <text x="26" y="246" fill="#756b55" font-family="Menlo, monospace" font-size="14">1,710 tokens in · 412 tokens out · ~$0.0016</text>
+    <rect x="26" y="286" width="70" height="34" rx="17" fill="#efe7d2" stroke="#c7ad72"/>
+    <text x="45" y="308" fill="#292313" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="15">Copy</text>
+  </g>
+
+  <g transform="translate(120 612)">
+    <rect x="0" y="0" width="1200" height="212" rx="14" fill="#fffdf7" stroke="#c7ad72"/>
+    <text x="26" y="42" fill="#292313" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="20" font-weight="600">Retrieved context (4)</text>
+    <line x1="26" y1="64" x2="1174" y2="64" stroke="#e2d5b8"/>
+    <text x="26" y="102" fill="#9f7a22" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="16" font-weight="600">[1] Mental Models Handbook, p. 12</text>
+    <text x="930" y="102" fill="#756b55" font-family="Menlo, monospace" font-size="14">similarity 0.82</text>
+    <text x="26" y="132" fill="#292313" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="16">Second-order thinking considers downstream consequences, feedback loops, and delayed effects.</text>
+    <text x="26" y="174" fill="#9f7a22" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="16" font-weight="600">[2] Decision Frameworks, p. 8</text>
+    <text x="930" y="174" fill="#756b55" font-family="Menlo, monospace" font-size="14">similarity 0.76</text>
+  </g>
+</svg>

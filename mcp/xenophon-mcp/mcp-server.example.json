@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "xenophon": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/xenophon-rag-agent/mcp/xenophon-mcp/dist/index.js"
+      ],
+      "env": {
+        "SUPABASE_URL": "https://sjhznnsniowvchsnicno.supabase.co",
+        "SUPABASE_ANON_KEY": "sb_publishable_your_key_here",
+        "OPENROUTER_API_KEY": "sk-or-v1-your_key_here",
+        "XENOPHON_DEFAULT_MODEL": "google/gemini-2.5-flash"
+      }
+    }
+  }
+}

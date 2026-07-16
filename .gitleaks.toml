@@ -1,0 +1,11 @@
+title = "Xenophon Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow only the browser-safe Supabase publishable key in the static app config"
+condition = "AND"
+regexTarget = "line"
+paths = ['''^src/config\.js$''']
+regexes = ['''supabase_key:\s*"sb_publishable_[A-Za-z0-9_-]+"''']

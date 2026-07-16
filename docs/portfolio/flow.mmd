@@ -1,0 +1,32 @@
+flowchart LR
+  User["User question"] --> UI["Static browser UI"]
+  UI --> Mode{"Response mode"}
+
+  Mode -->|"Standard"| OR1["OpenRouter chat completion"]
+  OR1 --> StdAnswer["Direct answer"]
+
+  Mode -->|"RAG"| RagFn["Supabase Edge Function: rag-chat"]
+  Mode -->|"Agent"| RagFn
+
+  RagFn --> Guard["Input guards\nrate limit, model allowlist,\nquery/message limits"]
+  Guard --> Planner{"Agent mode?"}
+  Planner -->|"yes"| Plan["Planner\nintent + retrieval queries"]
+  Planner -->|"no"| RawQuery["Latest user message"]
+
+  Plan --> Retrieval["Embedding + pgvector search"]
+  RawQuery --> Retrieval
+  Retrieval --> Sources["Normalized sources\ncitations + similarity"]
+  Sources --> Answer["OpenRouter answer\nwith retrieved evidence"]
+  Answer --> CitationCheck{"Valid citations?"}
+  CitationCheck -->|"no"| AnswerRetry["Answer retry\nsame evidence, stricter citations"]
+  CitationCheck -->|"yes"| Verify{"Agent mode?"}
+  AnswerRetry --> Verify
+  Verify -->|"yes"| Grounding["Grounding verification"]
+  Grounding --> Retry{"Weak evidence?"}
+  Retry -->|"yes"| Retrieval
+  Retry -->|"no"| RagAnswer["Grounded answer + trace"]
+  Verify -->|"no"| RagAnswer
+
+  StdAnswer --> Compare["Compare view"]
+  RagAnswer --> Compare
+  Compare --> Telemetry["Portfolio metrics\nretrieval, citations,\ncost, latency"]

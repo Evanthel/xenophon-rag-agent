@@ -1,0 +1,25 @@
+{
+  "name": "xenophon",
+  "description": "Portfolio AI assistant with RAG, source citations, and an inspectable agent pipeline.",
+  "homepage": "https://evanthel.github.io/xenophon-rag-agent/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Evanthel/xenophon-rag-agent.git"
+  },
+  "keywords": [
+    "rag",
+    "llm",
+    "supabase",
+    "pgvector",
+    "mcp",
+    "ai-agent",
+    "javascript",
+    "typescript"
+  ],
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "benchmark:portfolio": "node scripts/run_portfolio_benchmark.mjs",
+    "test": "node --test tests/*.test.mjs"
+  }
+}

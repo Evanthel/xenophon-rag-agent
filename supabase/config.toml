@@ -377,14 +377,25 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+# Public browser/MCP endpoints. They are callable with the publishable
+# Supabase key, but still validate a JWT instead of accepting anonymous
+# unauthenticated requests.
 [functions.rag-chat]
-verify_jwt = false
+verify_jwt = true
 
+[functions.search-knowledge]
+verify_jwt = true
+
+[functions.list-documents]
+verify_jwt = true
+
+# Admin-style endpoints. They require a verified Supabase JWT plus the
+# server-side INGEST_TOKEN checked inside each function.
 [functions.ingest-chunks]
-verify_jwt = false
+verify_jwt = true
 
 [functions.cleanup-documents]
-verify_jwt = false
+verify_jwt = true
 
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
