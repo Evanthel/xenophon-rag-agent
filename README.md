@@ -32,6 +32,21 @@ The portfolio work in this repository is the Xenophon layer on top of that base:
 - Local MCP server that exposes the same backend as tools for agent clients.
 - Node test suite covering the pure planning, verification, citation, source, usage, and authorization logic.
 
+## Evidence & Evaluation
+
+- [Architecture and RAG/Agent flow](docs/portfolio/README.md#flow-diagram)
+- [15 fixed evaluation questions](docs/portfolio/evaluation-questions.json)
+- [Benchmark results](docs/portfolio/results/benchmark-2026-07-16.md) and [methodology](docs/portfolio/README.md#benchmark-methodology)
+- [Real Compare-mode capture](docs/portfolio/screenshots/compare-mode-deep-learning.png), showing the direct and retrieval-grounded answers alongside cited evidence
+
+<a href="docs/portfolio/screenshots/compare-mode-deep-learning.png">
+  <img
+    src="docs/portfolio/screenshots/compare-mode-deep-learning.png"
+    alt="Xenophon Compare mode: direct answer versus a RAG answer with citations and retrieved context"
+    height="900"
+  >
+</a>
+
 ## Product Surface
 
 The browser app supports four modes:

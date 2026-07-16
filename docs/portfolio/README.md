@@ -6,6 +6,7 @@ This folder is the portfolio evidence pack for Xenophon: architecture flow, Comp
 
 - Flow diagram: [flow.mmd](flow.mmd)
 - Compare-mode preview: [compare-mode-preview.svg](compare-mode-preview.svg)
+- Live Compare-mode screenshot: [screenshots/compare-mode-deep-learning.png](screenshots/compare-mode-deep-learning.png)
 - Live Compare-mode screenshot: [screenshots/compare-mode-dropout.png](screenshots/compare-mode-dropout.png)
 - Fixed evaluation questions: [evaluation-questions.json](evaluation-questions.json)
 - Live benchmark runner: [../../scripts/run_portfolio_benchmark.mjs](../../scripts/run_portfolio_benchmark.mjs)
@@ -57,6 +58,12 @@ flowchart LR
   RagAnswer --> Compare
   Compare --> Telemetry["Portfolio metrics\nretrieval, citations,\ncost, latency"]
 ```
+
+## Benchmark Methodology
+
+The benchmark sends the same 15 fixed questions through the `Standard` and `RAG` paths using the same model. Each case records retrieved chunks, citation validity, expected-source coverage, expected-term coverage, latency, token usage, and estimated cost.
+
+Citation validity is a structural check that bracket citations point to returned sources. Expected-term coverage is a lightweight lexical signal rather than a semantic or human correctness score. The committed report is therefore evidence of a repeatable baseline, not a claim of comprehensive model quality.
 
 ## Run Benchmark
 
