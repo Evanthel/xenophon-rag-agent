@@ -1,65 +1,145 @@
 # Xenophon
 
-Xenophon is a reflective chatbot for distilling dilemmas, concluding conundrums, and relieving reflection. The frontend remains a static GitHub Pages app, but `v1.3` adds a visible lightweight agentic pipeline on top of the earlier Supabase-backed retrieval-augmented generation (RAG) flow.
+Xenophon is a portfolio project: a reflective AI assistant with retrieval-augmented generation, an inspectable agent pipeline, and a small MCP integration layer. It is intentionally built as a static frontend plus Supabase Edge Functions to show how far a lightweight architecture can go before it needs a full application server.
 
-# Specs
+The project focuses on a practical product question: how can an AI assistant answer with context, expose its reasoning workflow as product telemetry, and stay deployable as a simple static app?
 
-`index.html` contains the full browser app, including the UI, settings drawer, OpenRouter request logic, Supabase RAG controls, agent pipeline renderer, side-by-side comparison view, markdown rendering, token and cost metadata, and transcript export.
+Live demo: https://evanthel.github.io/xenophon-rag-agent/
 
-The app now supports four response modes:
+## Lineage
 
-- `Standard`: direct browser-to-OpenRouter call with no retrieval.
-- `RAG`: browser invokes a Supabase Edge Function, which retrieves matching chunks from pgvector and then calls OpenRouter with that context as high-priority evidence.
-- `Agent`: browser invokes the same Edge Function in agent mode. The backend plans the request, decides whether to answer now or ask one clarifying question, rewrites retrieval queries, retrieves evidence, answers with citations, verifies grounding, and retries retrieval when the first evidence pass is weak.
-- `Compare`: runs both paths side by side and shows the retrieved chunks with citations below the RAG answer.
+GitHub still marks this repository as a fork from the original classroom chatbot lineage (`klodzikowski/lmt-ai-19-chatbot` / `lmt-chatbot`). The inherited base was a small browser chatbot used for course work.
 
-The `Agent` mode exposes a visible `Pipeline trace` beneath the reply, including:
+The portfolio work in this repository is the Xenophon layer on top of that base:
 
-- step status labels such as `done`, `skipped`, and `low_confidence`
-- planner decision, intent, and retrieval goal
-- generated retrieval queries and retry queries
-- number of retrieved chunks
-- sources actually cited in the final answer
-- a grounding badge such as `Grounded`, `Weak evidence`, or `Needs clarification`
+- Retrieval-augmented generation backed by Supabase and pgvector.
+- Supabase Edge Functions for RAG, search, document listing, ingestion, and cleanup.
+- Agent pipeline with planning, query rewriting, retrieval, answering, verification, and retry.
+- Compare mode for side-by-side direct LLM vs RAG evaluation.
+- MCP stdio server exposing the knowledge base to agent clients.
+- Repeatable benchmark pack with fixed questions, cost/latency/citation metrics, and a real Compare-mode screenshot.
+- CI, TypeScript tests, Python smoke checks, security guards, and frontend/backend modularization.
 
-Repository structure:
+## Portfolio Highlights
 
-- `index.html` - complete static app.
-- `scripts/ingest_supabase_rag.py` - extracts local PDFs and uploads chunk batches to Supabase for embedding and storage, with automatic OCR fallback for pages whose embedded PDF text is corrupted.
-- `scripts/cleanup_supabase_documents.py` - removes test or temporary documents from the Supabase RAG store.
-- `supabase/migrations/20260508_add_rag.sql` - schema, pgvector index, and retrieval RPC.
-- `supabase/functions/rag-chat/index.ts` - retrieval + OpenRouter orchestration, including the agentic pipeline.
-- `supabase/functions/search-knowledge/index.ts` - semantic retrieval endpoint for MCP and other non-UI clients.
-- `supabase/functions/list-documents/index.ts` - document listing endpoint for MCP and admin-style inspection.
-- `supabase/functions/ingest-chunks/index.ts` - protected ingestion endpoint that embeds and stores uploaded chunks.
-- `supabase/functions/cleanup-documents/index.ts` - protected cleanup endpoint for deleting test or temporary documents.
-- `supabase/functions/_shared/cors.ts` - shared CORS headers for browser-safe invocation.
-- `mcp/xenophon-mcp/` - local `stdio` MCP server exposing Xenophon as MCP tools.
+- Static frontend with no build step, split into focused JavaScript modules and CSS.
+- RAG backend using Supabase, pgvector, embeddings, and source citations.
+- Agent mode with planning, query rewriting, retrieval, answering, grounding verification, and retry.
+- Side-by-side `Standard` vs `RAG` comparison mode for evaluating retrieval impact.
+- Token, cost, cached-token, latency, model snapshot, and transcript metadata in the UI.
+- Portfolio evidence pack with a flow diagram, Compare-mode visual, and repeatable benchmark questions.
+- Security hardening for public Edge Functions: JWT verification, rate limiting, model allowlisting, request-size limits, and explicit endpoint visibility.
+- Local MCP server that exposes the same backend as tools for agent clients.
+- Node test suite covering the pure planning, verification, citation, source, usage, and authorization logic.
 
-Runtime dependencies in the browser are still loaded from CDNs:
+## Product Surface
 
-- `marked` for markdown parsing.
-- `DOMPurify` for sanitizing rendered assistant markdown.
+The browser app supports four modes:
+
+- `Standard`: direct browser-to-OpenRouter chat completion with no retrieval.
+- `RAG`: retrieves matching chunks from Supabase/pgvector and answers with source citations.
+- `Agent`: plans the request, rewrites retrieval queries, retrieves evidence, answers, verifies grounding, and retries retrieval when evidence is weak.
+- `Compare`: runs direct and RAG paths side by side so the retrieval delta is visible.
+
+The `Agent` mode renders a pipeline trace under each reply: planner intent, retrieval goal, generated queries, retry queries, retrieved count, cited sources, and grounding status.
+
+## Architecture
+
+```text
+Browser UI
+  |-- Standard mode --> OpenRouter chat completions
+  |-- RAG/Agent mode -> Supabase Edge Function: rag-chat
+
+rag-chat
+  |-- planner.ts       -> parse/prepare retrieval intent
+  |-- retrieval.ts     -> embed query and search pgvector chunks
+  |-- answering.ts     -> call OpenRouter with retrieved evidence
+  |-- verification.ts  -> evaluate grounding and build retry queries
+  |-- sources.ts       -> normalize citations and source metadata
+  |-- usage.ts         -> aggregate token usage
+  |-- security.ts      -> rate limits, model allowlist, input guards
+
+MCP server
+  |-- ask_xenophon     -> rag-chat
+  |-- search_knowledge -> semantic search endpoint
+  |-- list_documents   -> document listing endpoint
+```
+
+## Repository Structure
+
+- `index.html` - static HTML shell.
+- `styles/main.css` - browser app styles.
+- `src/config.js` - frontend constants, prompt, pricing, storage keys, and sampling presets.
+- `src/api.js` - OpenRouter and Supabase function calls.
+- `src/state.js` - browser conversation state helpers.
+- `src/render.js` - markdown rendering and sanitization.
+- `src/ui.js` - browser UI controller and DOM rendering.
+- `supabase/functions/rag-chat/` - RAG and agent pipeline modules.
+- `supabase/functions/search-knowledge/` - semantic search endpoint.
+- `supabase/functions/list-documents/` - document listing endpoint.
+- `supabase/functions/ingest-chunks/` - protected ingestion endpoint.
+- `supabase/functions/cleanup-documents/` - protected cleanup endpoint.
+- `scripts/` - local ingestion and cleanup helpers.
+- `mcp/xenophon-mcp/` - local stdio MCP server exposing Xenophon tools.
+
+## Security Model
+
+Endpoint visibility is explicit in `supabase/config.toml`:
+
+- Public browser/MCP endpoints: `rag-chat`, `search-knowledge`, `list-documents`.
+- Protected admin endpoints: `ingest-chunks`, `cleanup-documents`.
+
+All configured functions validate a Supabase JWT. The public endpoints are intended for calls using the publishable Supabase key. The protected endpoints also require the server-side `INGEST_TOKEN` via `x-ingest-token`.
+
+`rag-chat` is bring-your-own-key for OpenRouter. The frontend and MCP server send the OpenRouter key in `x-openrouter-api-key`; the function still accepts the legacy JSON body field for compatibility. The public endpoint does not read a server OpenRouter key from environment variables.
+
+Additional `rag-chat` guards:
+
+- per-worker rate limit
+- maximum latest-query length
+- maximum retained chat messages and message length
+- model allowlist, defaulting to `google/gemini-2.5-flash` and `google/gemini-2.5-pro`
+- optional `OPENROUTER_MODEL_ALLOWLIST` env var for comma-separated deployment-specific models
+
+## Run Locally
+
+Open `index.html` directly or serve the repo root with any static file server:
+
+```bash
+python3 -m http.server 4173
+```
+
+Run unit tests:
+
+```bash
+npm test
+```
+
+The tests cover planner parsing and fallbacks, verifier parsing and fallbacks, source normalization, citation extraction, usage aggregation, endpoint visibility, model allowlisting, query limits, and rate limiting.
+
+## CI
+
+The GitHub Actions workflow runs secret scanning, repository hygiene checks, MCP `npm ci` plus build, Deno formatting and type checks for Supabase Functions, Node test coverage for the TypeScript logic, and lightweight Python script smoke checks.
+
+## Supabase Functions
+
+Deploy functions from the `supabase/functions/` tree. Required runtime secrets:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `INGEST_TOKEN` for ingestion and cleanup
+
+Optional:
+
+- `OPENROUTER_MODEL_ALLOWLIST`
 
 ## MCP Server
 
-The repository now also includes a local MCP server scaffold in `mcp/xenophon-mcp/`. It exposes the existing Xenophon backend as MCP tools over `stdio`:
+The MCP package exposes:
 
-- `ask_xenophon` - query the existing `rag-chat` flow in `rag` or `agent` mode.
-- `search_knowledge` - run semantic search over the indexed Supabase chunks.
-- `list_documents` - inspect the current knowledge-base documents.
-
-Supporting Supabase Edge Functions:
-
-- `supabase/functions/search-knowledge/index.ts` - semantic retrieval endpoint used by MCP.
-- `supabase/functions/list-documents/index.ts` - document listing endpoint used by MCP.
-
-Architecture summary:
-
-- MCP host talks to the local `stdio` server in `mcp/xenophon-mcp/`.
-- `ask_xenophon` forwards requests to the existing `rag-chat` Supabase Edge Function.
-- `search_knowledge` and `list_documents` expose retrieval and document inspection as separate MCP tools.
-- The MCP layer wraps the existing backend instead of duplicating the RAG logic.
+- `ask_xenophon` - query the `rag-chat` flow in `rag` or `agent` mode.
+- `search_knowledge` - run semantic search over indexed chunks.
+- `list_documents` - inspect indexed documents.
 
 Quick start:
 
@@ -69,65 +149,9 @@ npm install
 npm run build
 ```
 
-Minimal host configuration:
-
-```json
-{
-  "mcpServers": {
-    "xenophon": {
-      "command": "node",
-      "args": [
-        "/absolute/path/to/lmt-chatbot/mcp/xenophon-mcp/dist/index.js"
-      ],
-      "env": {
-        "SUPABASE_URL": "https://sjhznnsniowvchsnicno.supabase.co",
-        "SUPABASE_ANON_KEY": "sb_publishable_your_key_here",
-        "OPENROUTER_API_KEY": "sk-or-v1-your_key_here",
-        "XENOPHON_DEFAULT_MODEL": "google/gemini-2.5-flash"
-      }
-    }
-  }
-}
-```
-
-Suggested demo flow:
-
-1. Show that the MCP host detects the `xenophon` server and its tools.
-2. Run `list_documents` to show the knowledge base contents.
-3. Run `search_knowledge` with a query that exists in the indexed documents, for example `attention matrix`.
-4. Run `ask_xenophon` in `rag` mode to show the full MCP -> Supabase -> OpenRouter path.
-
 Related files:
 
-- [mcp/xenophon-mcp/README.md](/Users/piotrobiegly/Documents/GitHub/lmt-chatbot/mcp/xenophon-mcp/README.md:1) - MCP package setup and config.
-- [mcp/xenophon-mcp/mcp-server.example.json](/Users/piotrobiegly/Documents/GitHub/lmt-chatbot/mcp/xenophon-mcp/mcp-server.example.json:1) - copyable host config example.
-
-# Change Log
-
-## v1
-
-- Rebranded the app as Xenophon with new tagline, `Inquire` submit button, and `Philosophy Frames` settings section.
-- Switched from OpenAI to OpenRouter and added Gemini 2.5 Flash plus stable Gemini 2.5 Pro model options.
-- Removed the editable system prompt controls and hardcoded the Xenophon prompt into the first user message only.
-- Rethemed the UI with a pale parchment, white, and golden-accent Greek philosophy palette.
-
-## v1.1
-
-- Added Supabase-backed RAG with pgvector storage and a retrieval RPC.
-- Added `RAG` and `Compare` response modes to the static frontend.
-- Added a side-by-side `No RAG` vs `RAG` answer comparison view.
-- Added a retrieved-context panel with source citations and excerpts.
-- Added protected ingestion and cleanup functions plus local helper scripts for managing Supabase knowledge documents.
-
-## v1.2
-
-- Added `Agent` mode as a lightweight agentic pipeline layered on top of the existing RAG backend.
-- Added a `clarify-or-answer` gate so the planner can ask one clarifying follow-up when the request is too vague.
-- Added multi-query retrieval planning with visible query rewrite output.
-- Added a grounding verification step and a visible `Pipeline trace` panel under agent replies.
-- Added automatic retrieval retry with broader fallback queries when the first evidence pass is weak.
-- Added planner rationale preview in the UI, including decision, intent, and retrieval goal.
-
-## v1.2.1
-
-- Improved PDF ingestion quality by detecting corrupted embedded text and falling back to OCR for affected pages before chunking and embedding.
+- [docs/portfolio/README.md](docs/portfolio/README.md)
+- [mcp/xenophon-mcp/README.md](mcp/xenophon-mcp/README.md)
+- [mcp/xenophon-mcp/mcp-server.example.json](mcp/xenophon-mcp/mcp-server.example.json)
+- [CHANGELOG.md](CHANGELOG.md)

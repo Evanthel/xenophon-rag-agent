@@ -1,0 +1,122 @@
+[
+  {
+    "id": "q01",
+    "question": "According to The Little Book of Deep Learning, how does learning from data differ from explicitly programming a solution?",
+    "category": "foundations",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["learning from data", "model", "parameters", "training"]
+  },
+  {
+    "id": "q02",
+    "question": "Explain underfitting and overfitting in the context of basis function or kernel regression.",
+    "category": "foundations",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["underfitting", "overfitting", "regression", "training"]
+  },
+  {
+    "id": "q03",
+    "question": "Why do GPUs, TPUs, and batches matter for efficient deep learning computation?",
+    "category": "efficient-computation",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["GPU", "TPU", "batch", "parallel"]
+  },
+  {
+    "id": "q04",
+    "question": "What are tensors, and why are they a natural representation for deep learning models?",
+    "category": "efficient-computation",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["tensor", "array", "dimensions", "computation"]
+  },
+  {
+    "id": "q05",
+    "question": "What role do loss functions play during neural network training?",
+    "category": "training",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["loss", "training", "prediction", "optimize"]
+  },
+  {
+    "id": "q06",
+    "question": "How does an autoregressive model generate a sequence?",
+    "category": "training",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["autoregressive", "sequence", "token", "causal"]
+  },
+  {
+    "id": "q07",
+    "question": "Describe gradient descent and how it updates model parameters.",
+    "category": "training",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["gradient descent", "parameters", "loss", "update"]
+  },
+  {
+    "id": "q08",
+    "question": "What does backpropagation compute, and why is it central to training deep networks?",
+    "category": "training",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["backpropagation", "gradient", "layers", "training"]
+  },
+  {
+    "id": "q09",
+    "question": "What is the value of depth in a neural network according to the book?",
+    "category": "training",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["depth", "features", "layers", "representation"]
+  },
+  {
+    "id": "q10",
+    "question": "How does dropout regularize a neural network?",
+    "category": "model-components",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["dropout", "regularization", "units", "training"]
+  },
+  {
+    "id": "q11",
+    "question": "What problem do normalizing layers address during training?",
+    "category": "model-components",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["normalization", "batch normalization", "training", "activations"]
+  },
+  {
+    "id": "q12",
+    "question": "Explain the attention operator and why multi-head attention is useful.",
+    "category": "model-components",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["attention", "query", "key", "value", "multi-head"]
+  },
+  {
+    "id": "q13",
+    "question": "How do token embeddings and positional encodings support transformer models?",
+    "category": "architectures",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["token embedding", "positional encoding", "transformer", "sequence"]
+  },
+  {
+    "id": "q14",
+    "question": "How does the book describe denoising diffusion for image generation?",
+    "category": "synthesis",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["denoising", "diffusion", "image generation", "noise"]
+  },
+  {
+    "id": "q15",
+    "question": "What are quantization and adapters, and why do they matter in the compute schism?",
+    "category": "compute-schism",
+    "expected_sources": [{ "title": "lbdl", "source_path": "lbdl.pdf" }],
+    "requires_citations": true,
+    "expected_answer_terms": ["quantization", "adapters", "compute", "model"]
+  }
+]

@@ -3,7 +3,7 @@
     "xenophon": {
       "command": "node",
       "args": [
-        "/absolute/path/to/lmt-chatbot/mcp/xenophon-mcp/dist/index.js"
+        "/absolute/path/to/xenophon-rag-agent/mcp/xenophon-mcp/dist/index.js"
       ],
       "env": {
         "SUPABASE_URL": "https://sjhznnsniowvchsnicno.supabase.co",

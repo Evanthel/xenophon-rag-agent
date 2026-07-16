@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.ns", "dom", "dom.iterable"],
+    "types": ["./supabase/functions/_shared/supabase-edge.d.ts"]
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 120,
+    "indentWidth": 2,
+    "singleQuote": false,
+    "semiColons": true,
+    "proseWrap": "preserve"
+  }
+}

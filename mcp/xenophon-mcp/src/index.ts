@@ -75,7 +75,7 @@ function getRequiredEnv(name: string) {
 function getConfig() {
   return {
     supabaseUrl: getRequiredEnv("SUPABASE_URL").replace(/\/$/, ""),
-    supabaseAnonKey: process.env.SUPABASE_ANON_KEY?.trim() || "",
+    supabaseAnonKey: getRequiredEnv("SUPABASE_ANON_KEY"),
     defaultModel: process.env.XENOPHON_DEFAULT_MODEL?.trim() || "google/gemini-2.5-flash",
   };
 }
@@ -170,9 +170,11 @@ server.registerTool(
   }) => {
     const response = await fetchJson<RagChatResponse>(buildFunctionUrl("rag-chat"), {
       method: "POST",
-      headers: makeSupabaseHeaders(),
+      headers: {
+        ...makeSupabaseHeaders(),
+        "x-openrouter-api-key": getOpenRouterApiKey(),
+      },
       body: JSON.stringify({
-        openrouterApiKey: getOpenRouterApiKey(),
         model: model || getConfig().defaultModel,
         messages: buildConversationMessages(conversation, prompt),
         temperature,

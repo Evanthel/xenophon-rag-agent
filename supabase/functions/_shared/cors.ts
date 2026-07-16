@@ -8,5 +8,5 @@ export const corsHeaders = {
     "x-openrouter-api-key",
     "x-ingest-token",
   ].join(", "),
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };

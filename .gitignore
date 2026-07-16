@@ -11,3 +11,4 @@ mcp/xenophon-mcp/dist/
 venv/
 __pycache__/
 /lbdl.pdf
+docs/portfolio/results/latest.*

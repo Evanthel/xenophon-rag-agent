@@ -11,11 +11,11 @@ This package exposes the Xenophon knowledge base and agent flow as a local `stdi
 ## Required environment variables
 
 - `SUPABASE_URL`
+- `SUPABASE_ANON_KEY` - sent to Supabase Edge Functions for JWT verification.
 - `OPENROUTER_API_KEY`
 
 Optional:
 
-- `SUPABASE_ANON_KEY` - sent to Supabase Edge Functions if your deployment expects it.
 - `XENOPHON_DEFAULT_MODEL` - defaults to `google/gemini-2.5-flash`.
 
 ## Install and run
@@ -43,7 +43,7 @@ node dist/index.js
     "xenophon": {
       "command": "node",
       "args": [
-        "/absolute/path/to/lmt-chatbot/mcp/xenophon-mcp/dist/index.js"
+        "/absolute/path/to/xenophon-rag-agent/mcp/xenophon-mcp/dist/index.js"
       ],
       "env": {
         "SUPABASE_URL": "https://your-project.supabase.co",
@@ -56,7 +56,7 @@ node dist/index.js
 }
 ```
 
-A copyable example also lives in [mcp-server.example.json](/Users/piotrobiegly/Documents/GitHub/lmt-chatbot/mcp/xenophon-mcp/mcp-server.example.json:1).
+A copyable example also lives in [mcp-server.example.json](mcp-server.example.json).
 
 ## Supabase functions used
 
