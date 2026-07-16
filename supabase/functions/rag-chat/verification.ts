@@ -49,9 +49,12 @@ export function analyzeSourceCitations(answer: string, sources: Array<{ index: n
   const sourceIndexes = new Set(sources.map((source) => source.index));
   const citedIndexes: number[] = [];
 
-  for (const match of String(answer || "").matchAll(/\[(\d+)\]/g)) {
-    const index = Number(match[1]);
-    if (Number.isFinite(index)) citedIndexes.push(index);
+  for (const match of String(answer || "").matchAll(/\[((?:\d+\s*,\s*)*\d+)\]/g)) {
+    for (const value of match[1].split(",")) {
+      const index = Number(value.trim());
+      // Academic references such as [2020] are not Xenophon source indexes.
+      if (Number.isFinite(index) && (index < 1900 || index > 2099)) citedIndexes.push(index);
+    }
   }
 
   const uniqueValid = [...new Set(citedIndexes.filter((index) => sourceIndexes.has(index)))];

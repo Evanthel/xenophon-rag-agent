@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DEFAULTS, XENOPHON_PROMPT, estimateCost } from "../src/config.js";
+import { analyzeSourceCitations } from "../supabase/functions/rag-chat/verification.ts";
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const questionsPath = resolve(rootDir, process.env.XENOPHON_QUESTIONS_FILE || "docs/portfolio/evaluation-questions.json");
@@ -106,12 +107,15 @@ async function callRagChat(messages) {
 }
 
 function citationStats(answer, sources, requiresCitations) {
-  const citations = [...String(answer || "").matchAll(/\[(\d+)\]/g)].map((match) => Number(match[1]));
   const sourceIndexes = new Set((sources || []).map((source) => Number(source.index)));
-  const invalid = citations.filter((index) => !sourceIndexes.has(index));
-  const uniqueValid = [...new Set(citations.filter((index) => sourceIndexes.has(index)))];
-  const validity = citations.length ? (citations.length - invalid.length) / citations.length : null;
-  const pass = requiresCitations ? citations.length > 0 && invalid.length === 0 : invalid.length === 0;
+  const analysis = analyzeSourceCitations(answer, sources || []);
+  const citations = analysis.cited_indexes;
+  const invalid = analysis.invalid_citation_indexes;
+  const uniqueValid = analysis.unique_valid_cited_indexes;
+  const validity = citations.length
+    ? citations.filter((index) => sourceIndexes.has(index)).length / citations.length
+    : null;
+  const pass = requiresCitations ? analysis.pass : invalid.length === 0;
 
   return {
     cited_count: citations.length,

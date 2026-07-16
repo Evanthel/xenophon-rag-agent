@@ -129,6 +129,23 @@ test("citation analysis flags missing and invalid source references", () => {
   assert.match(citationIssueNote(missing), /did not include/);
 });
 
+test("citation analysis supports grouped sources and ignores bibliography years", () => {
+  const sources = [1, 2, 3, 4].map((index) => ({ index, citation: `[${index}] Source` }));
+  const result = analyzeSourceCitations(
+    "The method follows Ho et al. [2020], with evidence in [2, 4] and an invalid source [9].",
+    sources,
+  );
+
+  assert.deepEqual(result.cited_indexes, [2, 4, 9]);
+  assert.deepEqual(result.unique_valid_cited_indexes, [2, 4]);
+  assert.deepEqual(result.invalid_citation_indexes, [9]);
+  assert.equal(result.pass, false);
+
+  const valid = analyzeSourceCitations("Ho et al. [2020] is supported by [1, 3].", sources);
+  assert.deepEqual(valid.cited_indexes, [1, 3]);
+  assert.equal(valid.pass, true);
+});
+
 test("retry queries prioritize unsupported claims and preserve fallback query", () => {
   const queries = buildRetryQueries({
     userMessage: "fallback question",
